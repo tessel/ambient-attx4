@@ -83,11 +83,10 @@ Ambient.prototype.IRQHandler = function(self) {
 }
 
 Ambient.prototype.validateCommunication = function(retries, callback){
-	
 	var response;
 	while (retries) {
 		this.chipSelect.low();
-		response = this.spi.transfer([0x00, 0x00, 0x00]);
+		response = this.spi.transferSync([0x00, 0x00, 0x00]);
 		if (response 
 			&& (response[0] == PACKET_CONF)
 			&& (response[1] == ACK_CMD)
@@ -99,11 +98,9 @@ Ambient.prototype.validateCommunication = function(retries, callback){
 		} else {
 			retries--;
 			if (!retries) {
-
 				callback && callback(new Error("Can't connect with module..."));
 				break;
 			}
-			
 		}
 		this.chipSelect.high();
 	}
