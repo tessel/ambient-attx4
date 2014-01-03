@@ -1,4 +1,6 @@
 ### Ambient Module: Light and Sound
+**When pushing this code to Tessel, move the /firmware folder to a different location so that it doesn't get batched up with the code as well. This will result in a smaller filesize that has to be pushed to Tessel**
+
 Use the Ambient module to gather data about the ambient light and sound levels. The module can also capture raw audio data but the sample rate is too slow to be useful at this point.
 
 The module currently supports 'streams' of light, sound level, and raw sound data as well as trigger levels for light and sound-levels. You can use triggers to get notified when, for example, a light turns on or somebody claps. 
