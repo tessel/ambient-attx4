@@ -194,6 +194,8 @@ Ambient.prototype.readRawSoundBuffer = function(next) {
 Ambient.prototype.readSoundLevelBuffer = function(next) {
 	this.readBuffer(SOUND_LEVEL_CMD, AMBIENT_BUF_SIZE, next);
 }
+
+// Remove once Array class works...
 function EmptyArray(size) {
 	var arr = [];
 
