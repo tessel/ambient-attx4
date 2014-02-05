@@ -70,11 +70,13 @@ Get a stream of sound level data
 *  **`ambient`.setLightTrigger(int between 0 and 255)** Set a trigger at a specified light level
 
  *  **`ambient`.on('light-trigger', callback(data))**
+
  *  **`ambient`.clearLightTrigger()**
 
 *  **`ambient`.setSoundLevelTrigger(int between 0 and 255)** Set a trigger at a specified sound level
 
  *  **`ambient`.on('sound-level-trigger', callback(data))**
+
  *  **`ambient`.clearSoundLevelTrigger()**
 
 ## License
