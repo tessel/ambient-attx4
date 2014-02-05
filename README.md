@@ -12,6 +12,11 @@ All the values received and used for triggers are between 0 and 255.
 
 You'll notice that the light readings seem to be logarithmic - when making the ambient light brighter, the reading will increase slowly and then get faster. That's a property of the photodiode itself.
 
+##Installation
+```sh
+npm install ambient-attx4
+```
+
 ##Example
 ```js
 var tessel = require('tessel');
@@ -47,16 +52,6 @@ ambient.on('sound-level-trigger', function(data) {
   
   ambient.clearSoundLevelTrigger();
 }
-```
-
-##Installation
-```sh
-npm install ambient-attx4
-```
-
-##Import
-```js
-var ambient = require('ambient-attx4');
 ```
 
 ##Methods
