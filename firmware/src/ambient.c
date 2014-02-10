@@ -16,7 +16,7 @@
 #define CS_PIN  2
 
 // Port A, pin 7
-#define PHOTODIODE_PIN 3
+#define PHOTODIODE_PIN 7
 
 // Port A, pin 2
 #define MIC_PIN 2 
@@ -78,18 +78,68 @@ void setupTimer(void);
 void prepareADC(void);
 int analogRead(char pin);
 
+// int reading = 0;
 int main(void) {
 
-    setup();
+  // // spi master
+  // // Set CS as OUTPUT
+  // sbi(DDRB, CS_PIN);
+  // // Make the ambient light as input
+  // cbi(DDRA, PHOTODIODE_PIN);
 
-    while (1){};
+  // // Set up pull up to keep CS high
+  // // sbi(PORTB, CS_PIN);
 
-    return 0;
+  // // Enable interrupts (SPI needs this)
+  // sei();
+
+  // // Start up master
+  // spiX_initmaster(0);
+
+  // // disable spi counter overflow enable
+  // // USICR&= ~(1<<USIOIE);
+  // // USICR&= ~(1<<USIWM0);
+  // prepareADC();
+  // while (1) {
+  //   reading = analogRead(MIC_PIN);
+    
+  //   // Disable ADC timer for now
+  //   // cbi(TIMSK1, OCIE1A);
+    
+  //   //re-enable USI
+  //   // USICR|=(1<<USIOIE)|(1<<USIWM0); 
+  //   // if (reading < 512){
+  //     // pull cs low
+  //     sbi(PORTB, CS_PIN);
+    
+  //     // sent out the reading bit 
+  //     spiX_put(reading); 
+  //     spiX_wait();
+
+  //     // pull cs high
+  //     cbi(PORTB, CS_PIN);
+  //   // }
+  //   // Disable USI
+  //   // USICR&= ~(1<<USIOIE);
+  //   // USICR&= ~(1<<USIWM0);
+    
+  //   // Re-enable ADC reads
+  //   // sbi(TIMSK1, OCIE1A);
+  // }
+
+  setup();
+
+  while (1){};
+
+  return 0;
 
 }
 
 void setup(void) {
   
+  // disable digital conversion on analog pins
+  // DIDR0 = (1 << LOUDNESS_PIN) | (1 << PHOTODIODE_PIN) | (1 << MIC_PIN);
+
   // Turn off interrupts  
   cli();
 
@@ -179,26 +229,32 @@ void prepareADC(void) {
 }
 
 int analogRead(char pin) {
+  prepareADC();
+  // Set the pin by writing to ADMUX 
+  // There is probably a better way to do this
+  (pin & 1) ? sbi(ADMUX, 0) : cbi(ADMUX, 0);
+  (pin & 2) ? sbi(ADMUX, 1) : cbi(ADMUX, 1);
+  (pin & 4) ? sbi(ADMUX, 2) : cbi(ADMUX, 2);
+  // clear bits 4-6
+  cbi(ADMUX, 3);
+  cbi(ADMUX, 4);
+  cbi(ADMUX, 5);
 
-    // Set the pin by writing to ADMUX 
-    // There is probably a better way to do this
-    (pin & 1) ? sbi(ADMUX, 0) : cbi(ADMUX, 0);
-    (pin & 2) ? sbi(ADMUX, 1) : cbi(ADMUX, 1);
-    (pin & 4) ? sbi(ADMUX, 2) : cbi(ADMUX, 2);
+  // Start the conversion
+  sbi(ADCSRA, ADSC);
 
-    // Start the conversion
-    sbi(ADCSRA, ADSC);
+  // Wait for the conversion to finish
+  while((ADCSRA & (1<<ADSC)) != 0);
 
-    // Wait for the conversion to finish
-    while((ADCSRA & (1<<ADSC)) != 0);
+  // if (ADC) {
+    // sbi(PORTB, TRIG_INT);
+    // cbi(PORTB, TRIG_INT);
+  // } 
 
-    // if (ADC) {
-      // sbi(PORTB, TRIG_INT);
-      // cbi(PORTB, TRIG_INT);
-    // } 
-
-    // Return the 10 bit result
-    return ADC;
+  // Return the 10 bit result
+  // low  = ADCL;
+  // high = ADCH;
+  return (ADCH << 8) | ADCL;
 }
 
 ISR(TIM1_COMPA_vect) {
