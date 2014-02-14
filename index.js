@@ -370,12 +370,8 @@ Ambient.prototype.SPITransfer = function(data, callback) {
     // Pull Chip select down prior to transfer
     this.chipSelect.low();
 
-    console.log("Sending: ", data);
-
     // Send over the data
     var ret = this.spi.transferSync(data);
-
-    console.log("received: ", ret);
 
     // Pull chip select back up
     this.chipSelect.high();
