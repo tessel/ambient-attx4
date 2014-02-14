@@ -9,6 +9,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "hardware" : {
+    "./firmware" : "false"
+  },
   "author": "",
   "license": "BSD-2-Clause"
 }

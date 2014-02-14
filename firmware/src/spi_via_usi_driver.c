@@ -475,7 +475,7 @@ char spiX_put( unsigned char val )
 
  */
 
-unsigned char spiX_get()
+unsigned char spiX_get(void)
 
 {
 
@@ -499,7 +499,7 @@ unsigned char spiX_get()
 
  */
 
-void spiX_wait()
+void spiX_wait(void)
 
 {
 

@@ -1,31 +1,22 @@
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
-var AMBIENT_BUF_SIZE = 32;
+
+var AMBIENT_BUF_SIZE = 10;
+var MAX_AMBIENT_VALUE = 1024;
 
 var ACK_CMD = 0;
-var LIGHT_CMD = 1;
-var SOUND_CMD = 2;
-var SOUND_LEVEL_CMD = 3;
+var FIRMWARE_CMD = 1;
+var LIGHT_CMD = 2;
+var SOUND_CMD = 3;
 var LIGHT_TRIGGER_CMD = 4;
-var SOUND_LEVEL_TRIGGER_CMD = 5;
+var SOUND_TRIGGER_CMD = 5;
 var FETCH_TRIGGER_CMD = 6;
 
-var STOP_CMD = 22;
-
+var STOP_CONF = 0x16;
 var PACKET_CONF = 0x55;
 var ACK_CONF = 0x33;
 
-var dummyData = EmptyArray(AMBIENT_BUF_SIZE);
-
-var Events = {
-	1 : "light",
-	2 : "raw-sound",
-	3 : "sound-level",
-	4 : "light-trigger",
-	5 : "sound-level-trigger",
-}
-
-function Ambient(hardware) {
+function Ambient(hardware, callback) {
 
 	// Set the reset pin
 	this.reset = hardware.gpio(2);
@@ -34,13 +25,13 @@ function Ambient(hardware) {
 	this.reset.output().high();
 
 	// Set up our IRQ
-	this.IRQ = hardware.gpio(3);
-	this.IRQ.record();
+	this.irq = hardware.gpio(3);
 
+	// Global connected. We may use this in the future
 	this.connected = false;
 
 	// Initialize SPI - it can't be much faster than 65k right now
-	this.spi = new hardware.SPI({clockSpeed:50000});
+	this.spi = new hardware.SPI({clockSpeed:1000});
 
 	this.lightTriggerLevel = null;
 
@@ -48,214 +39,213 @@ function Ambient(hardware) {
 
 	// milliSeconds between reads
 	this.pollingFrequency = 200;
+	this.lightPolling = false;
+	this.soundPolling = false;
+	this.pollInterval;
 
 	// We're going to handle the chip select ourselves for more 
 	// sending flexibility
 	this.chipSelect = hardware.gpio(1);
 	this.chipSelect.output().high();
 
-	self = this;
-	this.IRQ.on('rise', function() {
-		self.IRQHandler(self);
-	});
-
 	// Make sure we can communicate with the module
-	this.validateCommunication(10, function(err) {
-		if (err) { 
-			console.log("Could not establish comms")
-			throw err;
-			return;
-		}
-		console.log("Communication is established.");
+	this.establishCommunication(5, function(err, version) {
+    setImmediate(function() {
+    		if (err) {
+    			this.emit('error', err);
+    		}
+    		else {
+    			this.emit('ready');
+    		}
+    }.bind(this));
 
-		setInterval(function() {
-			self.pollBuffers();
-		}, self.pollingFrequency);
-	});
+    if (!err) 
+		{
+			this.connected = true;
+
+			// If someone starts listening 
+			this.on('newListener', function(event) 
+			{
+				// and there weren't listeners before
+				if (!this.listeners(event).length)
+				{
+					// start retrieving data for this type of buffer
+					this.setListening(true, event);
+				}
+			});
+
+			// if someone stops listening 
+			this.on('removeListener', function(event) 
+			{
+				// and there are none left
+				if (!this.listeners(event).length)
+				{
+					// stop retrieving data
+					this.setListening(false, event);
+				}
+			});
+    }
+
+    // Start listening for IRQ interrupts
+    this.irq.watch('rise', this.fetchTriggerValues.bind(this));
+
+    // Complete the setup
+    callback && callback(err, this);
+	}.bind(this));
 
 }
 
 // We want the ability to emit events
 util.inherits(Ambient, EventEmitter);
 
-Ambient.prototype.IRQHandler = function(self) {
-	self.fetchTriggerValues();
+Ambient.prototype.setListening = function(enable, event) {
+
+	if (event === "light")
+	{
+		this.lightPolling = enable;
+	}
+	else if (event === "sound")
+	{
+		this.soundPolling = enable;
+	}
+	else 
+	{
+		return;
+	}
+
+	// if the other buffer is not already polling
+	if (event === "light" && !this.soundPolling
+		|| event === "sound" && !this.lightPolling) 
+	{
+		if (enable)
+		{
+			// start polling
+			this.pollInterval = setInterval(this.pollBuffers.bind(this), this.pollingFrequency);
+		}
+		else
+		{
+			// stop polling
+			clearInterval(this.pollInterval);
+		}
+
+	}
 }
 
-Ambient.prototype.validateCommunication = function(retries, callback){
-	var response;
-	while (retries) {
-		this.chipSelect.low();
-		response = this.spi.transferSync([0x00, 0x00, 0x00]);
-		if (response 
-			&& (response[0] == PACKET_CONF)
-			&& (response[1] == ACK_CMD)
-			&& response[2] == ACK_CONF) {
-			this.connected = true;
-			this.chipSelect.high();
-			callback && callback(null);
-			break;
-		} else {
-			retries--;
-			if (!retries) {
-				callback && callback(new Error("Can't connect with module..."));
-				break;
-			}
-		}
-		this.chipSelect.high();
-	}
-}	
-
 Ambient.prototype.pollBuffers = function() {
-	// temporary
-	var self = this;
-	if (!self.connected) {
-		self.validateCommunication(3, function(err) {
+	if (!this.connected) {
+		this.establishCommunication(5, function(err) {
 			if (err) {
 				throw new Error("Can't communicate with module...");
 			}
 		});
 	} 
-	self.readLightBuffer();
-	self.readRawSoundBuffer();
-	self.readSoundLevelBuffer();
+	if (this.lightPolling)
+	{
+		this.readLightBuffer();
+	}
+	if (this.soundPolling)
+	{
+		this.readSoundLevelBuffer();
+	}	
 }
 
 Ambient.prototype.readBuffer = function(command, readLen, next) {
 	
-	// Pull high, just in case
-	this.chipSelect.high();
+	// Create a packet with header, data bytes (16 bits) and stop byte
+	var header = [command, readLen, 0x00];
 
-	// Pull low to start the transfer
-	this.chipSelect.low();
+	var packet = header.concat(new Array(readLen*2)).concat(STOP_CONF);
 
-	// Transfer the command
-	this.spi.transfer(command);
+	// Synchronously transfer command to read
+	this.SPITransfer(packet, function(data) {
 
-	// Transfer the number of bytes to read
-	var cmdEcho = this.spi.transfer(readLen);
+		// If the response is valid
+		if (this.validateResponse(data, [PACKET_CONF, command, readLen])
+			&& data.pop() === STOP_CONF) {
 
-	// Get the length of the read echo'ed back to us
-	var lenEcho = this.spi.transfer(0x00);
+			// var buf = new Buffer(data.splice(header.length, data.length - header.length));
+			data = this.normalizeArray(data.splice(header.length, data.length - header.length));
 
-	if (cmdEcho[0] != command){
-		console.log("Incorrect command echo: ", cmdEcho);
-		return;
-	} 
+			var event = (command == LIGHT_CMD ? "light" : "sound");
+			setImmediate(function() {
+				this.emit(event, data);
+			}.bind(this));
 
-	if (lenEcho[0] != readLen) {
-		console.log("Incorrect length echo: ", lenEcho[0]);
-		return;
-	}
+			// Return data
+			next && next(null, data);
 
-	var self = this;
-
-	// Create the dummy bytes
-	var toTransfer = EmptyArray(readLen);
-
-	// Push the stop bit
-	toTransfer.push(22);
-
-	// Start reading the data
-	this.spi.transfer(toTransfer, function(err, response) {
-
-		// If the last member in the array is not the stop command, something went wrong
-		if (response.splice(response.length-1, 1)[0] != STOP_CMD) {
-			console.log("Missing stop flag.");
-			return;
+			return data;
+		}
+		else {
+			return next && next(new Error("Invalid response from module"), data);
 		}
 
-		// If we had an err or the command wasn't echoed shit went wrong
-		if (err) {
-			console.log("Error transferring code over SPI");
-			return (next && next(err, response));
-		}
-
-		// Emit it
-		if (response) self.emit(Events[command], response);
-
-		// End the transfer
-		self.chipSelect.high();
-
-		next && next(null, response);
-
-		return response;
-	});
+	}.bind(this));
 }
 
 Ambient.prototype.readLightBuffer = function(next) {
 	this.readBuffer(LIGHT_CMD, AMBIENT_BUF_SIZE, next);
 }
 
-Ambient.prototype.readRawSoundBuffer = function(next) {
+Ambient.prototype.readSoundLevelBuffer = function(next) {
 	this.readBuffer(SOUND_CMD, AMBIENT_BUF_SIZE, next);
 }
 
-Ambient.prototype.readSoundLevelBuffer = function(next) {
-	this.readBuffer(SOUND_LEVEL_CMD, AMBIENT_BUF_SIZE, next);
-}
-
-// Remove once Array class works...
-function EmptyArray(size) {
-	var arr = [];
-
-	for (var i = 0; i < size; i++) {
-		arr[i] = 0;
-	}
-
-	return arr;
-}
-
 Ambient.prototype.getSingleDatum = function(command, next) {
-	return this.readBuffer(command, 2, function(err, response) {
-		if (response[1] != undefined) {
-			return next(err, response[1]);
-		}
-		else return next(err, null);
-	});
+
+	// Read the buffer but only 1 byte
+	return this.readBuffer(command, 1, function(err, data) {
+
+		// Call the callback with data
+		next && next(err, data);
+
+		// Return the data
+		return data;
+
+	}.bind(this));
 }
 Ambient.prototype.getLightLevel = function(next) {
+	// Grab a single data point
 	this.getSingleDatum(LIGHT_CMD, next);
 }	
 
 Ambient.prototype.getSoundLevel = function(next) {
-	this.getSingleDatum(SOUND_LEVEL_CMD, next);
+		// Grab a single data point
+	this.getSingleDatum(SOUND_CMD, next);
 }
 
 Ambient.prototype.setTrigger = function(triggerCmd, triggerVal, next) {
-	// Pull high, just in case
-	this.chipSelect.high();
 
-	// Pull low to start the transfer
-	this.chipSelect.low();
+	// Make the packet
+	triggerVal = Math.ceil(triggerVal * MAX_AMBIENT_VALUE);
 
-	// Transfer the command
-	this.spi.transfer(triggerCmd);
+	var dataBuffer = new Buffer(2);
+	dataBuffer.writeUInt16BE(triggerVal, 0);
+	var packet = [triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1), 0x00];
 
-	// Transfer the number of bytes to read
-	var cmdEcho = this.spi.transfer(triggerVal);
+	// Send it over SPI
+	this.SPITransfer(packet, function(data) {
+		// If it's a valud response
+		if (this.validateResponse(data, [PACKET_CONF, triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1)]))
+		{
 
-	// Get the length of the read echo'ed back to us
-	var triggerEcho = this.spi.transfer(0x00);
+			var event = (command == LIGHT_TRIGGER_CMD ? "light-trigger-set" : "sound-trigger-set");
+			setImmediate(function() {
+				this.emit(event, triggerVal);
+			}.bind(this));
+			// Return data
+			next && next(null, triggerVal);
 
-	if (cmdEcho[0] != triggerCmd){
-		console.log("Misformatted response. Incorrect command echo: ", cmdEcho[0]);
-		return;
-	} 
+			return triggerVal;
 
-	if (triggerEcho[0] != triggerVal) {
-		console.log("Misformatted response. Incorrect Trigger Echo: ", triggerEcho[0]);
-		return;
-	}
+		}
+		else
+		{
+			next && next(new Error("Invalid response from module for trigger set."));
 
-	// End the transfer
-	self.chipSelect.high();
 
-	console.log("Trigger level set");
-	// Call the callback
-	next && next(null, response);
-
-	return response;
+		}
+	}.bind(this));
 }
 
 Ambient.prototype.setLightTrigger = function(triggerVal, next) {
@@ -266,61 +256,153 @@ Ambient.prototype.clearLightTrigger = function(next) {
 	this.setLightTrigger(0, next);
 }
 
-Ambient.prototype.setSoundLevelTrigger = function(triggerVal) {
-	this.setTrigger(SOUND_LEVEL_TRIGGER_CMD, triggerVal, next);
+Ambient.prototype.setSoundTrigger = function(triggerVal, next) {
+	this.setTrigger(SOUND_TRIGGER_CMD, triggerVal, next);
 }
 
-Ambient.prototype.clearSoundLevelTrigger = function(next) {
-	this.setSoundLevelTrigger(0, next)
+Ambient.prototype.clearSoundTrigger = function(next) {
+	this.setSoundTrigger(0, next)
 }
 
-Ambient.prototype.fetchTriggerValues = function(next) {
+Ambient.prototype.fetchTriggerValues = function() {
 
-	// Pull high, just in case
-	this.chipSelect.high();
-
-	// Pull low to start the transfer
-	this.chipSelect.low();
+	// cmd, cmd_echo, light_val (16 bits), sound_val (16 bits)
+	var packet = [FETCH_TRIGGER_CMD, 0x00, 0x00, 0x00, 0x00, 0x00];
 
 	// Transfer the command
-	this.spi.transfer(FETCH_TRIGGER_CMD);
+	this.SPITransfer(packet, function(response) {
+		if (this.validateResponse(response, [PACKET_CONF, FETCH_TRIGGER_CMD]))
+		{
+			// make a buffer with the cmd and cmd_echo spliced out
+			var data = new Buffer(response.splice(2, response.length-2));
 
-	// Transfer the number of bytes to read
-	var cmdEcho = this.spi.transfer(0x00);
+			// Read values
+			var lightTriggerValue = this.normalizeValue(data.readUInt16BE(0));
+			var soundTriggerValue = this.normalizeValue(data.readUInt16BE(2));
 
-	if (cmdEcho[0] != FETCH_TRIGGER_CMD){
-		console.log("Misformatted response. Incorrect command echo: ", cmdEcho[0]);
-		return;
-	} 
+			setImmediate(function() {
+				if (lightTriggerValue)
+				{
+					this.emit('light-trigger', lightTriggerValue);
+				}
+				if (soundTriggerValue)
+				{
+					this.emit('sound-trigger', soundTriggerValue);
+				}
+			}.bind(this));
+		}
+		else
+		{
+			console.log("Warning... Invalid trigger values fetched...");
+		}
+	}.bind(this));
+}
 
-	// Grab the light trigger level
-	var lightTriggerValue = this.spi.transfer(0x00);
+Ambient.prototype.establishCommunication = function(retries, callback){
+	// Grab the firmware version
+	this.getFirmwareVersion(function(err, version) {
+		// If it didn't work
+		if (err) {
+			// Subtract number of retries
+			retries--;
+			// If there are no more retries possible
+			if (!retries) {
+				// Throw an error and return
+				return callback && callback(new Error("Can't connect with module..."));
+			}
+			// Else call recursively
+			else {
+				this.establishCommunication.bind(this, retries, callback)();
+			}
+		}
+		// If there was no error
+		else {
+			// Connected successfully
+			this.connect = true;
+			// Call callback with version
+			callback && callback(null, version);
+		}
+	}.bind(this));
+}  
 
+Ambient.prototype.validateResponse = function(values, expected, callback) {
+    var res = true;
+    // TODO: Replace with the 'every' method
+    expected.forEach(function(element, index) {
+  		// false means it could be anything
+  		if (element === false) {
+  			return;
+  		}
+      if (element != values[index]) {
+          res = false;
+      }
+    });
 
-	if (lightTriggerValue[0] != 0) {
-		this.emit('light-trigger', lightTriggerValue[0]);
+    setImmediate(function() {
+        callback && callback(res);
+    })
+
+    return res;
+}
+
+Ambient.prototype.getFirmwareVersion = function(callback) {
+
+    this.SPITransfer([FIRMWARE_CMD, 0x00, 0x00], function(response) {
+
+        if (err) return callback(err, null);
+        if (this.validateResponse(response, [false, FIRMWARE_CMD]) && response.length === 3) 
+        {
+            setImmediate(function() {
+                callback && callback(null, response[2]);
+            });
+        } 
+        else 
+        {
+            setImmediate(function() {
+                callback && callback(new Error("Error retrieving Firmware Version"));
+            });
+        }
+    }.bind(this));
+}
+
+Ambient.prototype.SPITransfer = function(data, callback) {
+    
+    // Pull Chip select down prior to transfer
+    this.chipSelect.low();
+
+    console.log("Sending: ", data);
+
+    // Send over the data
+    var ret = this.spi.transferSync(data);
+
+    console.log("received: ", ret);
+
+    // Pull chip select back up
+    this.chipSelect.high();
+
+    // Call any callbacks
+    callback && callback(ret);
+
+    // Return the data
+    return ret;
+}
+
+Ambient.prototype.normalizeValue = function(value) {
+	return (value/MAX_AMBIENT_VALUE);
+}
+Ambient.prototype.normalizeArray = function(array) {
+	var b = new Buffer(array);
+	var numUInt16 = b.length/2
+	var ret = new Array(numUInt16);
+
+	for (var i = 0; i < numUInt16; i+=2) {
+		ret[i] = this.normalizeValue(b.readUInt16BE(i));
 	}
 
-	// Grab the loudness trigger level
-	var soundLevelTriggerValue = this.spi.transfer(0x00);
-
-	if (soundLevelTriggerValue[0] != 0) {
-		this.emit('sound-level-trigger', soundLevelTriggerValue[0]);
-	}
-
-	// End the transfer
-	self.chipSelect.high();
-
-	var response = [lightTriggerValue[0], soundLevelTriggerValue[0]];
-
-	// Call the callback
-	next && next(null, response);
-
-	return response;
-
+	return ret;
 }
 
 exports.Ambient = Ambient;
-exports.connect = function (hardware) {
-  	return new Ambient(hardware);
+exports.use = function (hardware, callback) {
+  	return new Ambient(hardware, callback);
 };

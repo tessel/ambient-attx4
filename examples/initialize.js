@@ -1,43 +1,39 @@
 var tessel = require('tessel');
-var hardware = tessel.port('a');
-console.log("Looks like this breaks too");
-var ambient = require('../index.js').connect(hardware);
+var ambientPort = tessel.port('a');
+
+// 
+require('ambient-attx4').use(ambientPort, function(err, ambient) {
+
+ // Get a stream of light data
+  ambient.on('light', function(data) {
+    console.log("Got some  light: ", data);
+  });
+
+  // Get a stream of sound level data
+  ambient.on('sound', function(data) {
+
+    console.log("Got some  sound: ", data);
+  });
+
+  // Set trigger levels
+  ambient.setLightTrigger(0.15);
+
+  ambient.on('light-trigger', function(data) {
+    console.log("Our light trigger was hit:", data); 
+    
+    // Clear the trigger so it stops firing
+    ambient.clearLightTrigger();
+  });
 
 
-// ambient.getLightLevel(function(err, response) {
-// 	console.log("current ambient light: ", response);
-// });
+  // Set a sound level trigger
+  ambient.setSoundTrigger(0.45);
 
-// for (var i = 0; i < 10; i++) {
-// 	ambient.getLightLevel(function(err, response) {
-// 		console.log("current ambient light: ", response);
-// 	});
-// }
-ambient.setLightTrigger(50);
-ambient.setSoundLevelTrigger(50);
-// ambient.on('light', function(data) {
-// 	console.log("Got some mothafucking light: ", data);
-// });
-
-// ambient.on('raw-sound', function(data) {
-// 	console.log("Got some sound bitches: ", data);
-// });
-
-// ambient.on('sound-level', function(data) {
-// 	console.log("Sound Level: ", data);
-// })
-
-ambient.on('light-trigger', function(level) {
-	console.log("We got a light trigger at: ", level);
-})
-
-ambient.on('sound-level-trigger', function(level) {
-	console.log("Sound trigger: ", level);
-
-	tessel.led(1).toggle();
-	setTimeout(function() {
-		tessel.led(1).toggle();
-	}, 200);
-})
-
-
+  ambient.on('sound-trigger', function(data) {
+    
+    console.log("Something happened with sound: ", data);
+    
+    // Clear it
+    ambient.clearSoundTrigger();
+  }
+});
