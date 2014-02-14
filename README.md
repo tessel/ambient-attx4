@@ -55,7 +55,7 @@ require('ambient-attx4').use(ambientPort, function(err, ambient) {
     
     // Clear it
     ambient.clearSoundTrigger();
-  }
+  });
 });
 ```
 
