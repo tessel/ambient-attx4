@@ -2,7 +2,7 @@ var tessel = require('tessel');
 var ambientPort = tessel.port('a');
 
 // 
-require('ambient-attx4').use(ambientPort, function(err, ambient) {
+require('../').use(ambientPort, function(err, ambient) {
 
  // Get a stream of light data
   ambient.on('light', function(data) {
@@ -27,7 +27,7 @@ require('ambient-attx4').use(ambientPort, function(err, ambient) {
 
 
   // Set a sound level trigger
-  ambient.setSoundTrigger(0.45);
+  ambient.setSoundTrigger(0.5);
 
   ambient.on('sound-trigger', function(data) {
     
@@ -37,3 +37,7 @@ require('ambient-attx4').use(ambientPort, function(err, ambient) {
     ambient.clearSoundTrigger();
   });
 });
+
+setInterval(function() {
+
+}, 20000);

@@ -1,7 +1,8 @@
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 
-var AMBIENT_BUF_SIZE = 10;
+// Max 10 (16 bit) data chunks
+var AMBIENT_BUF_SIZE = 10 * 2;
 var MAX_AMBIENT_VALUE = 1024;
 
 var ACK_CMD = 0;
@@ -370,8 +371,12 @@ Ambient.prototype.SPITransfer = function(data, callback) {
     // Pull Chip select down prior to transfer
     this.chipSelect.low();
 
+    console.log("Sent: ", data);
+
     // Send over the data
     var ret = this.spi.transferSync(data);
+
+    console.log("rec: ", ret);    
 
     // Pull chip select back up
     this.chipSelect.high();
