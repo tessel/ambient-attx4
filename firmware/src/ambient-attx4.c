@@ -69,6 +69,9 @@ void setupIO(void) {
   
   // Pull it low
   cbi(PORTB, IRQ_PIN);
+
+  // Set MOSI as an input
+  cbi(DDRA, MOSI);
 }
 
 void enableSPI(void) {
@@ -83,9 +86,6 @@ void enableSPI(void) {
 
   // Set up pull up to keep CS high
   sbi(PORTB, CS_PIN);
-
-  // Start up slave
-  spiX_initslave(0);
 
   // disable spi counter overflow enable
   USICR&= ~(1<<USIOIE);
@@ -209,6 +209,9 @@ ISR(INT0_vect){
   
   // Disable ADC timer for now
   cbi(TIMSK1, OCIE1A);
+
+  // Start up slave
+  spiX_initslave(0);
   
   // Enable interrupts (SPI needs this)
   sei();
@@ -227,7 +230,7 @@ ISR(INT0_vect){
   // Initialize variables
   volatile char length = 0;
   volatile DataBuffer dataBuffer;
-  volatile trigVal = 0;
+  volatile uint8_t trigVal = 0;
   
    // Confirm command 
   spiX_put(command); 
@@ -360,6 +363,9 @@ ISR(INT0_vect){
   // Disable USI
   USICR&= ~(1<<USIOIE);
   USICR&= ~(1<<USIWM0);
+
+  cbi(DDRA, MOSI);
+  cbi(DDRA, MISO);
   
   // Re-enable ADC reads 
   sbi(TIMSK1, OCIE1A);

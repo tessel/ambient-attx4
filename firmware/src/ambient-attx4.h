@@ -21,6 +21,12 @@
 // Port B Pin 1
 #define IRQ_PIN 1
 
+// Port A Pin 5
+#define MISO 5
+
+// Port A pin 6
+#define MOSI 6
+
 // Available commands
 #define ACK_CMD  0
 #define FIRMWARE_CMD 1
