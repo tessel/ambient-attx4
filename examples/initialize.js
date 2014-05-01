@@ -27,7 +27,7 @@ require('../').use(ambientPort, function(err, ambient) {
 
 
   // Set a sound level trigger
-  ambient.setSoundTrigger(0.5);
+  ambient.setSoundTrigger(0.001);
 
   ambient.on('sound-trigger', function(data) {
     
@@ -38,6 +38,4 @@ require('../').use(ambientPort, function(err, ambient) {
   });
 });
 
-setInterval(function() {
-
-}, 20000);
+setInterval(function() {}, 200);

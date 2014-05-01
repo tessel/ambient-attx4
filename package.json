@@ -21,5 +21,10 @@
     "ambient",
     "light",
     "sound"
-  ]
+  ],
+  "hardware": {
+    "examples" : "false",
+    "firmware" : "false",
+    "test" : "false"
+  }
 }
