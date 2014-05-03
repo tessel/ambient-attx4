@@ -302,7 +302,7 @@ Ambient.prototype.fetchTriggerValues = function() {
 		}
 		else
 		{
-			console.log("Warning... Invalid trigger values fetched...");
+			console.warn("Warning... Invalid trigger values fetched...");
 		}
 	});
 }
@@ -397,8 +397,8 @@ Ambient.prototype.normalizeBuffer = function(buf) {
 	var numUInt16 = buf.length/2
 	var ret = new Array(numUInt16);
 
-	for (var i = 0; i < numUInt16; i+=2) {
-		ret[i] = this.normalizeValue(buf.readUInt16BE(i));
+	for (var i = 0; i < numUInt16; i++) {
+		ret[i] = this.normalizeValue(buf.readUInt16BE(i*2));
 	}
 
 	return ret;
