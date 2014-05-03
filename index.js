@@ -166,9 +166,9 @@ Ambient.prototype.readBuffer = function(command, readLen, callback) {
   var self = this;
   
   // Create a packet with header, data bytes (16 bits) and stop byte
-  var header = new Buffer([command, readLen, 0x00]);
+  var header = new Buffer([command, readLen/2, 0x00]);
 
-  var bytes = new Buffer(readLen * 2);
+  var bytes = new Buffer(readLen);
   bytes.fill(0);
 
   var stop = new Buffer(1);
@@ -180,7 +180,7 @@ Ambient.prototype.readBuffer = function(command, readLen, callback) {
   self.SPITransfer(packet, function(data) {
 
     // If the response is valid
-    if (self.validateResponse(data, [PACKET_CONF, command, readLen]) &&
+    if (self.validateResponse(data, [PACKET_CONF, command, readLen/2]) &&
       data[data.length-1] === STOP_CONF) {
 
       data = self.normalizeBuffer(data.slice(header.length, data.length-1));
@@ -396,7 +396,7 @@ Ambient.prototype.SPITransfer = function(data, callback) {
     this.chipSelect.low();
 
     // Send over the data
-    var ret = this.spi.transferSync(new Buffer(data)); 
+    var ret = this.spi.transferSync(data); 
 
     // Pull chip select back up
     this.chipSelect.high();
