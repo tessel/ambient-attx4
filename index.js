@@ -25,14 +25,14 @@ function Ambient(hardware, callback) {
   // Make sure you pull this high so we don't keep the module reset. 
   this.reset.output().high();
 
-  // Set up our IRQ as a pullup
+  // Set up our IRQ as a pull down
   this.irq = hardware.gpio(3).input().rawWrite('low');
 
   // Global connected. We may use this in the future
   this.connected = false;
 
-  // Initialize SPI - it can't be much faster than 65k right now
-  this.spi = new hardware.SPI({clockSpeed:1000, mode:2});
+  // Initialize SPI in SPI mode 2 (data on falling edge)
+  this.spi = new hardware.SPI({clockSpeed:50000, mode:2});
 
   this.lightTriggerLevel = null;
 
@@ -48,12 +48,16 @@ function Ambient(hardware, callback) {
   // sending flexibility
   this.chipSelect = hardware.gpio(1).output().high();
 
+  var self = this;
+
   // Make sure we can communicate with the module
-  this.establishCommunication(5, function(err, version) {
+  self.establishCommunication(5, function(err, version) {
 
     if (err) {
-      this.emit('error', err);
+      // Emit the error
+      self.emit('error', err);
 
+      // Call the callback with an error
       if (callback) {
         callback(err);
       }
@@ -61,42 +65,43 @@ function Ambient(hardware, callback) {
       return null;
     }
     else {
-      this.connected = true;
+      self.connected = true;
 
       // Start listening for IRQ interrupts
-      this.irq.watch('high', this.fetchTriggerValues.bind(this));
+      self.irq.watch('high', self.fetchTriggerValues.bind(self));
 
       // If someone starts listening 
-      this.on('newListener', function(event) 
+      self.on('newListener', function(event) 
       {
         // and there weren't listeners before
-        if (!this.listeners(event).length)
+        if (!self.listeners(event).length)
         {
           // start retrieving data for this type of buffer
-          this.setListening(true, event);
+          self.setListening(true, event);
         }
       });
 
       // if someone stops listening 
-      this.on('removeListener', function(event) 
+      self.on('removeListener', function(event) 
       {
         // and there are none left
-        if (!this.listeners(event).length)
+        if (!self.listeners(event).length)
         {
           // stop retrieving data
-          this.setListening(false, event);
+          self.setListening(false, event);
         }
       });
 
       // Complete the setup
-      callback && callback(null, this);
+      callback && callback(null, self);
 
-      this.emit('ready');
+      // Emit the ready event
+      self.emit('ready');
 
-      return this;
+      // Return this 
+      return self;
     }
-  }.bind(this));
-
+  });
 }
 
 // We want the ability to emit events
@@ -131,29 +136,32 @@ Ambient.prototype.setListening = function(enable, event) {
 			// stop polling
 			clearInterval(this.pollInterval);
 		}
-
 	}
 }
 
 Ambient.prototype.pollBuffers = function() {
-	if (!this.connected) {
-		this.establishCommunication(5, function(err) {
+  var self = this;
+
+	if (!self.connected) {
+		self.establishCommunication(5, function(err) {
 			if (err) {
 				throw new Error("Can't communicate with module...");
 			}
 		});
 	} 
-	if (this.lightPolling)
+	if (self.lightPolling)
 	{
-		this.readLightBuffer();
+		self.readLightBuffer();
 	}
-	if (this.soundPolling)
+	if (self.soundPolling)
 	{
-		this.readSoundLevelBuffer();
+		self.readSoundLevelBuffer();
 	}	
 }
 
 Ambient.prototype.readBuffer = function(command, readLen, next) {
+
+  var self = this;
 	
 	// Create a packet with header, data bytes (16 bits) and stop byte
 	var header = new Buffer([command, readLen, 0x00]);
@@ -167,19 +175,17 @@ Ambient.prototype.readBuffer = function(command, readLen, next) {
 	var packet = Buffer.concat([header, bytes, stop]);
 
 	// Synchronously transfer command to read
-	this.SPITransfer(packet, function(data) {
+	self.SPITransfer(packet, function(data) {
 
 		// If the response is valid
-		if (this.validateResponse(data, [PACKET_CONF, command, readLen])
+		if (self.validateResponse(data, [PACKET_CONF, command, readLen])
 			&& data[data.length-1] === STOP_CONF) {
 
-			data = this.normalizeBuffer(data.slice(header.length, data.length-1));
+			data = self.normalizeBuffer(data.slice(header.length, data.length-1));
 
 			var event = (command == LIGHT_CMD ? "light" : "sound");
 
-			setImmediate(function() {
-				this.emit(event, data);
-			}.bind(this));
+			self.emit(event, data);
 
 			// Return data
 			next && next(null, data);
@@ -190,7 +196,7 @@ Ambient.prototype.readBuffer = function(command, readLen, next) {
 			return next && next(new Error("Invalid response from module"), data);
 		}
 
-	}.bind(this));
+	});
 }
 
 Ambient.prototype.readLightBuffer = function(next) {
@@ -204,15 +210,7 @@ Ambient.prototype.readSoundLevelBuffer = function(next) {
 Ambient.prototype.getSingleDatum = function(command, next) {
 
 	// Read the buffer but only 1 byte
-	return this.readBuffer(command, 1, function(err, data) {
-
-		// Call the callback with data
-		next && next(err, data);
-
-		// Return the data
-		return data;
-
-	}.bind(this));
+	this.readBuffer(command, 1, next);
 }
 Ambient.prototype.getLightLevel = function(next) {
 	// Grab a single data point
@@ -226,6 +224,8 @@ Ambient.prototype.getSoundLevel = function(next) {
 
 Ambient.prototype.setTrigger = function(triggerCmd, triggerVal, next) {
 
+  var self = this;
+
 	// Make the packet
 	triggerVal = Math.ceil(triggerVal * MAX_AMBIENT_VALUE);
 
@@ -235,28 +235,25 @@ Ambient.prototype.setTrigger = function(triggerCmd, triggerVal, next) {
 	var packet = new Buffer([triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1), 0x00]);
 
 	// Send it over SPI
-	this.SPITransfer(packet, function(data) {
+	self.SPITransfer(packet, function(data) {
 		// If it's a valud response
-		if (this.validateResponse(data, [PACKET_CONF, triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1)]))
+		if (self.validateResponse(data, [PACKET_CONF, triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1)]))
 		{
 
-			var event = (command == LIGHT_TRIGGER_CMD ? "light-trigger-set" : "sound-trigger-set");
-			setImmediate(function() {
-				this.emit(event, triggerVal);
-			}.bind(this));
-			// Return data
-			next && next(null, triggerVal);
-
-			return triggerVal;
-
+      // Get the event title
+      var event = (command == LIGHT_TRIGGER_CMD ? "light-trigger-set" : "sound-trigger-set");
+      // Emit the event
+      self.emit(event, triggerVal);
+      // Return data
+      next && next(null, triggerVal);
+      // Return the value
+      return triggerVal;
 		}
 		else
 		{
 			next && next(new Error("Invalid response from module for trigger set."));
-
-
 		}
-	}.bind(this));
+	});
 }
 
 Ambient.prototype.setLightTrigger = function(triggerVal, next) {
@@ -277,12 +274,14 @@ Ambient.prototype.clearSoundTrigger = function(next) {
 
 Ambient.prototype.fetchTriggerValues = function() {
 
+  var self = this;
+
 	// cmd, cmd_echo, light_val (16 bits), sound_val (16 bits)
 	var packet = new Buffer([FETCH_TRIGGER_CMD, 0x00, 0x00, 0x00, 0x00, 0x00]);
 
 	// Transfer the command
-	this.SPITransfer(packet, function(response) {
-		if (this.validateResponse(response, [PACKET_CONF, FETCH_TRIGGER_CMD]))
+	self.SPITransfer(packet, function(response) {
+		if (self.validateResponse(response, [PACKET_CONF, FETCH_TRIGGER_CMD]))
 		{
 			// make a buffer with the cmd and cmd_echo spliced out
 			var data = new Buffer(response.slice(2, response.length));
@@ -290,29 +289,28 @@ Ambient.prototype.fetchTriggerValues = function() {
 			var lightTriggerValue = this.normalizeValue(data.readUInt16BE(0));
 			var soundTriggerValue = this.normalizeValue(data.readUInt16BE(2));
 
-      this.irq.watch('high', this.fetchTriggerValues.bind(this));
+      self.irq.watch('high', this.fetchTriggerValues.bind(this));
 
-			setImmediate(function() {
-				if (lightTriggerValue)
-				{
-					this.emit('light-trigger', lightTriggerValue);
-				}
-				if (soundTriggerValue)
-				{
-					this.emit('sound-trigger', soundTriggerValue);
-				}
-			}.bind(this));
+			if (lightTriggerValue)
+			{
+				this.emit('light-trigger', lightTriggerValue);
+			}
+			if (soundTriggerValue)
+			{
+				this.emit('sound-trigger', soundTriggerValue);
+			}
 		}
 		else
 		{
 			console.log("Warning... Invalid trigger values fetched...");
 		}
-	}.bind(this));
+	});
 }
 
 Ambient.prototype.establishCommunication = function(retries, callback){
+  var self = this;
 	// Grab the firmware version
-	this.getFirmwareVersion(function(err, version) {
+	self.getFirmwareVersion(function(err, version) {
 		// If it didn't work
 		if (err) {
 			// Subtract number of retries
@@ -324,17 +322,17 @@ Ambient.prototype.establishCommunication = function(retries, callback){
 			}
 			// Else call recursively
 			else {
-				this.establishCommunication.bind(this, retries, callback)();
+				self.establishCommunication(retries, callback);
 			}
 		}
 		// If there was no error
 		else {
 			// Connected successfully
-			this.connected = true;
+			self.connected = true;
 			// Call callback with version
 			callback && callback(null, version);
 		}
-	}.bind(this));
+	});
 }  
 
 Ambient.prototype.validateResponse = function(values, expected, callback) {
@@ -357,12 +355,13 @@ Ambient.prototype.validateResponse = function(values, expected, callback) {
 }
 
 Ambient.prototype.getFirmwareVersion = function(callback) {
+  var self = this;
 
-  this.SPITransfer(new Buffer([FIRMWARE_CMD, 0x00, 0x00]), function(response) {
+  self.SPITransfer(new Buffer([FIRMWARE_CMD, 0x00, 0x00]), function(response) {
     if (err) {
       return callback(err, null);
     }
-    else if (this.validateResponse(response, [false, FIRMWARE_CMD]) && response.length === 3) 
+    else if (self.validateResponse(response, [false, FIRMWARE_CMD]) && response.length === 3) 
     {
       callback && callback(null, response[2]);
     } 
@@ -370,7 +369,7 @@ Ambient.prototype.getFirmwareVersion = function(callback) {
     {
       callback && callback(new Error("Error retrieving Firmware Version"));
     }
-  }.bind(this));
+  });
 }
 
 Ambient.prototype.SPITransfer = function(data, callback) {
