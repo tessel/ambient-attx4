@@ -25,8 +25,8 @@ function Ambient(hardware, callback) {
   // Make sure you pull this high so we don't keep the module reset. 
   this.reset.output().high();
 
-  // Set up our IRQ
-  this.irq = hardware.gpio(3).input();
+  // Set up our IRQ as a pullup
+  this.irq = hardware.gpio(3).input().rawWrite('low');
 
   // Global connected. We may use this in the future
   this.connected = false;
@@ -52,9 +52,13 @@ function Ambient(hardware, callback) {
   this.establishCommunication(5, function(err, version) {
 
     if (err) {
-      setImmediate(function() {
-        this.emit('error', err);
-      }.bind(this));
+      this.emit('error', err);
+
+      if (callback) {
+        callback(err);
+      }
+
+      return null;
     }
     else {
       this.connected = true;
@@ -85,11 +89,9 @@ function Ambient(hardware, callback) {
       });
 
       // Complete the setup
-      callback && callback(err, this);
+      callback && callback(null, this);
 
-      setImmediate(function() {
-        this.emit('ready');
-      }.bind(this));
+      this.emit('ready');
 
       return this;
     }
