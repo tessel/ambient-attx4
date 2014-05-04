@@ -26,8 +26,8 @@ require('../').use(ambientPort, function(err, ambient) {
   ambient.setLightTrigger(0.15);
 
   ambient.on('light-trigger', function(data) {
-    console.log("Our light trigger was hit:", data); 
-    
+    console.log("Our light trigger was hit:", data);
+
     // Clear the trigger so it stops firing
     ambient.clearLightTrigger();
   });
@@ -39,9 +39,9 @@ require('../').use(ambientPort, function(err, ambient) {
   ambient.setSoundTrigger(0.001);
 
   ambient.on('sound-trigger', function(data) {
-    
+
     console.log("Something happened with sound: ", data);
-    
+
     // Clear it
     ambient.clearSoundTrigger();
   });
