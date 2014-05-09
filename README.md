@@ -1,8 +1,6 @@
 #Ambient
 Driver for the ambient-attx4 Tessel ambient (light and sound detecting) module.
 
-##Really Important Information
-
 Use the Ambient module to gather data about the ambient light and sound levels.
 
 The module currently supports 'streams' of light levels and sound levels, as well as trigger levels for light and sound levels. You can use triggers to get notified when, for example, a light turns on or somebody claps.
@@ -10,6 +8,9 @@ The module currently supports 'streams' of light levels and sound levels, as wel
 All the values received and used for triggers are between 0.0 and 1.0.
 
 You'll notice that the light readings seem to be logarithmic - when making the ambient light brighter, the reading will increase slowly and then get faster. That's a property of the photodiode itself.
+
+##TODO
+Make functions to trigger when light/sound drops below a level (currently supports "light turned on" but not "light turned off")
 
 ##Installation
 ```sh
