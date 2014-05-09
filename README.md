@@ -30,7 +30,7 @@ var tessel = require('tessel');
 var ambientPort = tessel.port('a');
 
 // Import the ambient library and use designated port
-require('../').use(ambientPort, function(err, ambient) {
+require('ambient-attx4').use(ambientPort, function(err, ambient) {
 
   // If there was a problem
   if (err) {
