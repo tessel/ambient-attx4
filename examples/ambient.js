@@ -5,6 +5,9 @@ whenever a specified light or sound level
 trigger is met.
 *********************************************/
 
+// Any copyright is dedicated to the Public Domain.
+// http://creativecommons.org/publicdomain/zero/1.0/
+
 var tessel = require('tessel');
 var ambientPort = tessel.port('a');
 
@@ -54,6 +57,3 @@ require('../').use(ambientPort, function(err, ambient) {
 });
 
 setInterval(function() {}, 200);
-
-// Any copyright is dedicated to the Public Domain.
-// http://creativecommons.org/publicdomain/zero/1.0/
