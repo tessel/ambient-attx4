@@ -238,11 +238,11 @@ Ambient.prototype._pollBuffers = function() {
   }
   if (self.lightPolling)
   {
-    self.readLightBuffer();
+    self.getLightBuffer();
   }
   if (self.soundPolling)
   {
-    self.readSoundBuffer();
+    self.getSoundBuffer();
   }
 };
 
@@ -321,6 +321,44 @@ Ambient.prototype._setListening = function(enable, event) {
   }
 };
 
+Ambient.prototype._setTrigger = function(triggerCmd, triggerVal, callback) {
+
+  var self = this;
+
+  // Make the packet
+  triggerVal = Math.ceil(triggerVal * MAX_AMBIENT_VALUE);
+
+  var dataBuffer = new Buffer(2);
+  dataBuffer.writeUInt16BE(triggerVal, 0);
+
+  var packet = new Buffer([triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1), 0x00]);
+
+  // Send it over SPI
+  self._SPITransfer(packet, function(data) {
+    // If it's a valud response
+    if (self._validateResponse(data, [PACKET_CONF, triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1)]))
+    {
+
+      // Get the event title
+      var event = (command == LIGHT_TRIGGER_CMD ? "light-trigger-set" : "sound-trigger-set");
+      // Emit the event
+      self.emit(event, triggerVal);
+      // Return data
+      if (callback) {
+        callback(null, triggerVal);
+      }
+      // Return the value
+      return triggerVal;
+    }
+    else
+    {
+      if (callback) {
+        callback(new Error("Invalid response from module for trigger set."));
+      }
+    }
+  });
+};
+
 Ambient.prototype._SPITransfer = function(data, callback) {
 
     // Pull Chip select down prior to transfer
@@ -362,76 +400,46 @@ Ambient.prototype._validateResponse = function(values, expected, callback) {
   return res;
 };
 
+// Clears trigger listener for light trigger
 Ambient.prototype.clearLightTrigger = function(callback) {
   this.setLightTrigger(0, callback);
 };
 
+// Gets trigger listener for sound trigger
 Ambient.prototype.clearSoundTrigger = function(callback) {
   this.setSoundTrigger(0, callback);
 };
 
+// Gets the last 20 light readings
+Ambient.prototype.getLightBuffer = function(callback) {
+  this._readBuffer(LIGHT_CMD, AMBIENT_BUF_SIZE, callback);
+};
+
+// Gets a single data point of light level
 Ambient.prototype.getLightLevel = function(callback) {
   // Grab a single data point
   this._getSingleDatum(LIGHT_CMD, callback);
 };
 
+// Gets the last 20 sound readings
+Ambient.prototype.getSoundBuffer = function(callback) {
+  this._readBuffer(SOUND_CMD, AMBIENT_BUF_SIZE, callback);
+};
+
+// Gets a single data point of sound level
 Ambient.prototype.getSoundLevel = function(callback) {
     // Grab a single data point
   this._getSingleDatum(SOUND_CMD, callback);
 };
 
-Ambient.prototype.readLightBuffer = function(callback) {
-  this._readBuffer(LIGHT_CMD, AMBIENT_BUF_SIZE, callback);
-};
-
-Ambient.prototype.readSoundBuffer = function(callback) {
-  this._readBuffer(SOUND_CMD, AMBIENT_BUF_SIZE, callback);
-};
-
+// Sets a trigger to emit a 'light-trigger' event when triggerVal is reached
 Ambient.prototype.setLightTrigger = function(triggerVal, callback) {
-  this.setTrigger(LIGHT_TRIGGER_CMD, triggerVal, callback);
+  this._setTrigger(LIGHT_TRIGGER_CMD, triggerVal, callback);
 };
 
+// Sets a trigger to emit a 'sound-trigger' event when triggerVal is reached
 Ambient.prototype.setSoundTrigger = function(triggerVal, callback) {
-  this.setTrigger(SOUND_TRIGGER_CMD, triggerVal, callback);
-};
-
-Ambient.prototype.setTrigger = function(triggerCmd, triggerVal, callback) {
-
-  var self = this;
-
-  // Make the packet
-  triggerVal = Math.ceil(triggerVal * MAX_AMBIENT_VALUE);
-
-  var dataBuffer = new Buffer(2);
-  dataBuffer.writeUInt16BE(triggerVal, 0);
-
-  var packet = new Buffer([triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1), 0x00]);
-
-  // Send it over SPI
-  self._SPITransfer(packet, function(data) {
-    // If it's a valud response
-    if (self._validateResponse(data, [PACKET_CONF, triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1)]))
-    {
-
-      // Get the event title
-      var event = (command == LIGHT_TRIGGER_CMD ? "light-trigger-set" : "sound-trigger-set");
-      // Emit the event
-      self.emit(event, triggerVal);
-      // Return data
-      if (callback) {
-        callback(null, triggerVal);
-      }
-      // Return the value
-      return triggerVal;
-    }
-    else
-    {
-      if (callback) {
-        callback(new Error("Invalid response from module for trigger set."));
-      }
-    }
-  });
+  this._setTrigger(SOUND_TRIGGER_CMD, triggerVal, callback);
 };
 
 function use (hardware, callback) {

@@ -78,24 +78,39 @@ setInterval(function() {}, 200);
 
 ##Methods
 
-*  **`ambient`.on('light', callback(data))**
-Get a stream of light data
+*  **`ambient`.clearLightTrigger(callback(err, triggerVal))** Clears trigger listener for light trigger.
 
-*  **`ambient`.on('sound', callback(data))**
-Get a stream of sound level data
+*  **`ambient`.clearSoundTrigger(callback(err, triggerVal))** Clears trigger listener for sound trigger.
 
-*  **`ambient`.setLightTrigger(float between 0 and 1.0)** Set a trigger at a specified light level
+*  **`ambient`.getLightBuffer(callback(err, data))** Gets the last 20 light readings.
 
- *  **`ambient`.on('light-trigger', callback(data))**
+*  **`ambient`.getLightLevel(callback(err, data))** Gets a single data point of light level.
 
- *  **`ambient`.clearLightTrigger()**
+*  **`ambient`.getSoundBuffer(callback(err, data))** Gets the last 20 sound readings.
 
-*  **`ambient`.setSoundTrigger(int between 0 and 1.0)** Set a trigger at a specified sound level
+*  **`ambient`.getSoundLevel(callback(err, data))** Gets a single data point of sound level.
 
- *  **`ambient`.on('sound-trigger', callback(data))**
+*  **`ambient`.setLightTrigger(triggerVal, callback(err, triggerVal))** Sets a trigger to emit a 'light-trigger' event when triggerVal is reached. `triggerVal` is a float between 0 and 1.0.
 
- *  **`ambient`.clearSoundTrigger()**
+*  **`ambient`.setSoundTrigger(triggerVal, callback(err, triggerVal))** Sets a trigger to emit a 'sound-trigger' event when triggerVal is reached. `triggerVal` is a float between 0 and 1.0.
+
+##Events
+
+* *data* Emitted when data is available.
+
+* *error* Emitted upon error.
+
+* *light* Get a stream of light data.
+
+* *light-trigger* Emitted upon crossing light trigger threshold.
+
+* *ready* Emitted upon first successful communication between the Tessel and the module.
+
+* *sound* Get a stream of sound level data.
+
+* *sound-trigger* Emitted upon crossing sound trigger threshold.
 
 ## License
 
 MIT
+APACHE
