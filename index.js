@@ -118,36 +118,112 @@ function Ambient(hardware, callback) {
 // We want the ability to emit events
 util.inherits(Ambient, EventEmitter);
 
-Ambient.prototype._setListening = function(enable, event) {
+Ambient.prototype._establishCommunication = function(retries, callback){
+  var self = this;
+  // Grab the firmware version
+  self._getFirmwareVersion(function(err, version) {
+    // If it didn't work
+    if (err) {
+      // Subtract number of retries
+      retries--;
+      // If there are no more retries possible
+      if (!retries) {
+        // Throw an error and return
+        return callback && callback(new Error("Can't connect with module..."));
+      }
+      // Else call recursively
+      else {
+        self._establishCommunication(retries, callback);
+      }
+    }
+    // If there was no error
+    else {
+      // Connected successfully
+      self.connected = true;
+      // Call callback with version
+      if (callback) {
+        callback(null, version);
+      }
+    }
+  });
+};
 
-  if (event === "light")
-  {
-    this.lightPolling = enable;
-  }
-  else if (event === "sound")
-  {
-    this.soundPolling = enable;
-  }
-  else
-  {
-    return;
-  }
+Ambient.prototype._fetchTriggerValues = function() {
 
-  // if the other buffer is not already polling
-  if (event === "light" && !this.soundPolling ||
-      event === "sound" && !this.lightPolling)
-  {
-    if (enable)
+  var self = this;
+
+  // cmd, cmd_echo, light_val (16 bits), sound_val (16 bits)
+  var packet = new Buffer([FETCH_TRIGGER_CMD, 0x00, 0x00, 0x00, 0x00, 0x00]);
+
+  // Transfer the command
+  self._SPITransfer(packet, function(response) {
+    if (self._validateResponse(response, [PACKET_CONF, FETCH_TRIGGER_CMD]))
     {
-      // start polling
-      this.pollInterval = setInterval(this._pollBuffers.bind(this), this.pollingFrequency);
+      // make a buffer with the cmd and cmd_echo spliced out
+      var data = new Buffer(response.slice(2, response.length));
+      // Read values
+      var lightTriggerValue = this._normalizeValue(data.readUInt16BE(0));
+      var soundTriggerValue = this._normalizeValue(data.readUInt16BE(2));
+
+      self.irq.watch('high', this._fetchTriggerValues.bind(this));
+
+      if (lightTriggerValue)
+      {
+        this.emit('light-trigger', lightTriggerValue);
+      }
+      if (soundTriggerValue)
+      {
+        this.emit('sound-trigger', soundTriggerValue);
+      }
     }
     else
     {
-      // stop polling
-      clearInterval(this.pollInterval);
+      console.warn("Warning... Invalid trigger values fetched...");
     }
+  });
+};
+
+Ambient.prototype._getFirmwareVersion = function(callback) {
+  var self = this;
+
+  self._SPITransfer(new Buffer([FIRMWARE_CMD, 0x00, 0x00]), function(response) {
+    if (err) {
+      return callback(err, null);
+    }
+    else if (self._validateResponse(response, [false, FIRMWARE_CMD]) && response.length === 3)
+    {
+      if (callback) {
+        callback(null, response[2]);
+      }
+    }
+    else
+    {
+      if (callback) {
+        callback(new Error("Error retrieving Firmware Version"));
+      }
+    }
+  });
+};
+
+Ambient.prototype._getSingleDatum = function(command, callback) {
+
+  // Read the buffer but only 1 byte
+  this._readBuffer(command, 1, callback);
+};
+
+Ambient.prototype._normalizeBuffer = function(buf) {
+  var numUInt16 = buf.length/2;
+  var ret = new Array(numUInt16);
+
+  for (var i = 0; i < numUInt16; i++) {
+    ret[i] = this._normalizeValue(buf.readUInt16BE(i*2));
   }
+
+  return ret;
+};
+
+Ambient.prototype._normalizeValue = function(value) {
+  return (value/MAX_AMBIENT_VALUE);
 };
 
 Ambient.prototype._pollBuffers = function() {
@@ -213,18 +289,85 @@ Ambient.prototype._readBuffer = function(command, readLen, callback) {
   });
 };
 
-Ambient.prototype.readLightBuffer = function(callback) {
-  this._readBuffer(LIGHT_CMD, AMBIENT_BUF_SIZE, callback);
+Ambient.prototype._setListening = function(enable, event) {
+
+  if (event === "light")
+  {
+    this.lightPolling = enable;
+  }
+  else if (event === "sound")
+  {
+    this.soundPolling = enable;
+  }
+  else
+  {
+    return;
+  }
+
+  // if the other buffer is not already polling
+  if (event === "light" && !this.soundPolling ||
+      event === "sound" && !this.lightPolling)
+  {
+    if (enable)
+    {
+      // start polling
+      this.pollInterval = setInterval(this._pollBuffers.bind(this), this.pollingFrequency);
+    }
+    else
+    {
+      // stop polling
+      clearInterval(this.pollInterval);
+    }
+  }
 };
 
-Ambient.prototype.readSoundBuffer = function(callback) {
-  this._readBuffer(SOUND_CMD, AMBIENT_BUF_SIZE, callback);
+Ambient.prototype._SPITransfer = function(data, callback) {
+
+    // Pull Chip select down prior to transfer
+    this.chipSelect.low();
+
+    // Send over the data
+    var ret = this.spi.transferSync(data);
+
+    // Pull chip select back up
+    this.chipSelect.high();
+
+    // Call any callbacks
+    if (callback) {
+      callback(ret);
+    }
+
+    // Return the data
+    return ret;
 };
 
-Ambient.prototype._getSingleDatum = function(command, callback) {
+Ambient.prototype._validateResponse = function(values, expected, callback) {
 
-  // Read the buffer but only 1 byte
-  this._readBuffer(command, 1, callback);
+  var res = true;
+
+  for (var index = 0; index < expected.length; index++) {
+
+    if (expected[index] === false) continue;
+
+    if (expected[index] != values[index]) {
+      res = false;
+      break;
+    }
+  }
+
+  if (callback) {
+    callback(res);
+  }
+
+  return res;
+};
+
+Ambient.prototype.clearLightTrigger = function(callback) {
+  this.setLightTrigger(0, callback);
+};
+
+Ambient.prototype.clearSoundTrigger = function(callback) {
+  this.setSoundTrigger(0, callback);
 };
 
 Ambient.prototype.getLightLevel = function(callback) {
@@ -235,6 +378,22 @@ Ambient.prototype.getLightLevel = function(callback) {
 Ambient.prototype.getSoundLevel = function(callback) {
     // Grab a single data point
   this._getSingleDatum(SOUND_CMD, callback);
+};
+
+Ambient.prototype.readLightBuffer = function(callback) {
+  this._readBuffer(LIGHT_CMD, AMBIENT_BUF_SIZE, callback);
+};
+
+Ambient.prototype.readSoundBuffer = function(callback) {
+  this._readBuffer(SOUND_CMD, AMBIENT_BUF_SIZE, callback);
+};
+
+Ambient.prototype.setLightTrigger = function(triggerVal, callback) {
+  this.setTrigger(LIGHT_TRIGGER_CMD, triggerVal, callback);
+};
+
+Ambient.prototype.setSoundTrigger = function(triggerVal, callback) {
+  this.setTrigger(SOUND_TRIGGER_CMD, triggerVal, callback);
 };
 
 Ambient.prototype.setTrigger = function(triggerCmd, triggerVal, callback) {
@@ -273,165 +432,6 @@ Ambient.prototype.setTrigger = function(triggerCmd, triggerVal, callback) {
       }
     }
   });
-};
-
-Ambient.prototype.setLightTrigger = function(triggerVal, callback) {
-  this.setTrigger(LIGHT_TRIGGER_CMD, triggerVal, callback);
-};
-
-Ambient.prototype.clearLightTrigger = function(callback) {
-  this.setLightTrigger(0, callback);
-};
-
-Ambient.prototype.setSoundTrigger = function(triggerVal, callback) {
-  this.setTrigger(SOUND_TRIGGER_CMD, triggerVal, callback);
-};
-
-Ambient.prototype.clearSoundTrigger = function(callback) {
-  this.setSoundTrigger(0, callback);
-};
-
-Ambient.prototype._fetchTriggerValues = function() {
-
-  var self = this;
-
-  // cmd, cmd_echo, light_val (16 bits), sound_val (16 bits)
-  var packet = new Buffer([FETCH_TRIGGER_CMD, 0x00, 0x00, 0x00, 0x00, 0x00]);
-
-  // Transfer the command
-  self._SPITransfer(packet, function(response) {
-    if (self._validateResponse(response, [PACKET_CONF, FETCH_TRIGGER_CMD]))
-    {
-      // make a buffer with the cmd and cmd_echo spliced out
-      var data = new Buffer(response.slice(2, response.length));
-      // Read values
-      var lightTriggerValue = this._normalizeValue(data.readUInt16BE(0));
-      var soundTriggerValue = this._normalizeValue(data.readUInt16BE(2));
-
-      self.irq.watch('high', this._fetchTriggerValues.bind(this));
-
-      if (lightTriggerValue)
-      {
-        this.emit('light-trigger', lightTriggerValue);
-      }
-      if (soundTriggerValue)
-      {
-        this.emit('sound-trigger', soundTriggerValue);
-      }
-    }
-    else
-    {
-      console.warn("Warning... Invalid trigger values fetched...");
-    }
-  });
-};
-
-Ambient.prototype._establishCommunication = function(retries, callback){
-  var self = this;
-  // Grab the firmware version
-  self._getFirmwareVersion(function(err, version) {
-    // If it didn't work
-    if (err) {
-      // Subtract number of retries
-      retries--;
-      // If there are no more retries possible
-      if (!retries) {
-        // Throw an error and return
-        return callback && callback(new Error("Can't connect with module..."));
-      }
-      // Else call recursively
-      else {
-        self._establishCommunication(retries, callback);
-      }
-    }
-    // If there was no error
-    else {
-      // Connected successfully
-      self.connected = true;
-      // Call callback with version
-      if (callback) {
-        callback(null, version);
-      }
-    }
-  });
-};
-
-Ambient.prototype._validateResponse = function(values, expected, callback) {
-
-  var res = true;
-
-  for (var index = 0; index < expected.length; index++) {
-
-    if (expected[index] === false) continue;
-
-    if (expected[index] != values[index]) {
-      res = false;
-      break;
-    }
-  }
-
-  if (callback) {
-    callback(res);
-  }
-
-  return res;
-};
-
-Ambient.prototype._getFirmwareVersion = function(callback) {
-  var self = this;
-
-  self._SPITransfer(new Buffer([FIRMWARE_CMD, 0x00, 0x00]), function(response) {
-    if (err) {
-      return callback(err, null);
-    }
-    else if (self._validateResponse(response, [false, FIRMWARE_CMD]) && response.length === 3)
-    {
-      if (callback) {
-        callback(null, response[2]);
-      }
-    }
-    else
-    {
-      if (callback) {
-        callback(new Error("Error retrieving Firmware Version"));
-      }
-    }
-  });
-};
-
-Ambient.prototype._SPITransfer = function(data, callback) {
-
-    // Pull Chip select down prior to transfer
-    this.chipSelect.low();
-
-    // Send over the data
-    var ret = this.spi.transferSync(data);
-
-    // Pull chip select back up
-    this.chipSelect.high();
-
-    // Call any callbacks
-    if (callback) {
-      callback(ret);
-    }
-
-    // Return the data
-    return ret;
-};
-
-Ambient.prototype._normalizeValue = function(value) {
-  return (value/MAX_AMBIENT_VALUE);
-};
-
-Ambient.prototype._normalizeBuffer = function(buf) {
-  var numUInt16 = buf.length/2;
-  var ret = new Array(numUInt16);
-
-  for (var i = 0; i < numUInt16; i++) {
-    ret[i] = this._normalizeValue(buf.readUInt16BE(i*2));
-  }
-
-  return ret;
 };
 
 exports.Ambient = Ambient;
