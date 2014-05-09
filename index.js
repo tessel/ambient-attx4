@@ -434,7 +434,9 @@ Ambient.prototype.setTrigger = function(triggerCmd, triggerVal, callback) {
   });
 };
 
+function use (hardware, callback) {
+  return new Ambient(hardware, callback);
+}
+
 exports.Ambient = Ambient;
-exports.use = function (hardware, callback) {
-    return new Ambient(hardware, callback);
-};
+exports.use = use;
