@@ -9,7 +9,7 @@ trigger is met.
 // http://creativecommons.org/publicdomain/zero/1.0/
 
 var tessel = require('tessel');
-var ambientPort = tessel.port('a');
+var ambientPort = tessel.port('A');
 
 // Import the ambient library and use designated port
 require('../').use(ambientPort, function(err, ambient) {
