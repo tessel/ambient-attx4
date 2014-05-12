@@ -79,37 +79,35 @@ setInterval(function() {}, 200);
 
 ##Methods
 
-*  **`ambient`.clearLightTrigger(callback(err, triggerVal))** Clears trigger listener for light trigger.
+##### * `ambient.clearLightTrigger(callback(err, triggerVal))` Clears trigger listener for light trigger.
 
-*  **`ambient`.clearSoundTrigger(callback(err, triggerVal))** Clears trigger listener for sound trigger.
+##### * `ambient.clearSoundTrigger(callback(err, triggerVal))` Clears trigger listener for sound trigger.
 
-*  **`ambient`.getLightBuffer(callback(err, data))** Gets the last 20 light readings.
+##### * `ambient.getLightBuffer(callback(err, data))` Gets the last 20 light readings.
 
-*  **`ambient`.getLightLevel(callback(err, data))** Gets a single data point of light level.
+##### * `ambient.getLightLevel(callback(err, data))` Gets a single data point of light level.
 
-*  **`ambient`.getSoundBuffer(callback(err, data))** Gets the last 20 sound readings.
+##### * `ambient.getSoundBuffer(callback(err, data))` Gets the last 20 sound readings.
 
-*  **`ambient`.getSoundLevel(callback(err, data))** Gets a single data point of sound level.
+##### * `ambient.getSoundLevel(callback(err, data))` Gets a single data point of sound level.
 
-*  **`ambient`.setLightTrigger(triggerVal, callback(err, triggerVal))** Sets a trigger to emit a 'light-trigger' event when triggerVal is reached. `triggerVal` is a float between 0 and 1.0.
+##### * `ambient.setLightTrigger(triggerVal, callback(err, triggerVal))` Sets a trigger to emit a 'light-trigger' event when triggerVal is reached. `triggerVal` is a float between 0 and 1.0.
 
-*  **`ambient`.setSoundTrigger(triggerVal, callback(err, triggerVal))** Sets a trigger to emit a 'sound-trigger' event when triggerVal is reached. `triggerVal` is a float between 0 and 1.0.
+##### * `ambient`.setSoundTrigger(triggerVal, callback(err, triggerVal))` Sets a trigger to emit a 'sound-trigger' event when triggerVal is reached. `triggerVal` is a float between 0 and 1.0.
 
 ##Events
 
-* *data* Emitted when data is available.
+##### * `ambient.on('error', callback(err))` Emitted upon error.
 
-* *error* Emitted upon error.
+##### * `ambient.on('light', callback(lightData))` Get a stream of light data.
 
-* *light* Get a stream of light data.
+##### * `ambient.on('light-trigger', callback(lightTriggerValue))` Emitted upon crossing light trigger threshold.
 
-* *light-trigger* Emitted upon crossing light trigger threshold.
+##### * `ambient.on('ready', callback())` Emitted upon first successful communication between the Tessel and the module.
 
-* *ready* Emitted upon first successful communication between the Tessel and the module.
+##### * `ambient.on('sound', callback(soundData))` Get a stream of sound level data.
 
-* *sound* Get a stream of sound level data.
-
-* *sound-trigger* Emitted upon crossing sound trigger threshold.
+##### * `ambient.on('sound-trigger', callback(soundTriggerValue))` Emitted upon crossing sound trigger threshold.
 
 ## License
 
