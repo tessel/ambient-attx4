@@ -37,11 +37,15 @@ function Ambient(hardware, callback) {
   // Set up our IRQ as a pull down
   this.irq = hardware.gpio(3).input().rawWrite('low');
 
+  // We're going to handle the chip select ourselves for more
+  // sending flexibility
+  this.chipSelect = hardware.gpio(1).output().high();
+
   // Global connected. We may use this in the future
   this.connected = false;
 
   // Initialize SPI in SPI mode 2 (data on falling edge)
-  this.spi = new hardware.SPI({clockSpeed:50000, mode:2});
+  this.spi = new hardware.SPI({clockSpeed:50000, mode:2, chipSelect:this.chipSelect});
 
   this.lightTriggerLevel = null;
 
@@ -52,10 +56,6 @@ function Ambient(hardware, callback) {
   this.lightPolling = false;
   this.soundPolling = false;
   this.pollInterval = undefined;
-
-  // We're going to handle the chip select ourselves for more
-  // sending flexibility
-  this.chipSelect = hardware.gpio(1).output().high();
 
   var self = this;
 
@@ -156,24 +156,24 @@ Ambient.prototype._fetchTriggerValues = function() {
   var packet = new Buffer([FETCH_TRIGGER_CMD, 0x00, 0x00, 0x00, 0x00, 0x00]);
 
   // Transfer the command
-  self._SPITransfer(packet, function(response) {
+  self.spi.transfer(packet, function spiComplete(err, response) {
     if (self._validateResponse(response, [PACKET_CONF, FETCH_TRIGGER_CMD]))
     {
       // make a buffer with the cmd and cmd_echo spliced out
       var data = new Buffer(response.slice(2, response.length));
       // Read values
-      var lightTriggerValue = this._normalizeValue(data.readUInt16BE(0));
-      var soundTriggerValue = this._normalizeValue(data.readUInt16BE(2));
+      var lightTriggerValue = self._normalizeValue(data.readUInt16BE(0));
+      var soundTriggerValue = self._normalizeValue(data.readUInt16BE(2));
 
-      self.irq.watch('high', this._fetchTriggerValues.bind(this));
+      self.irq.watch('high', self._fetchTriggerValues.bind(self));
 
       if (lightTriggerValue)
       {
-        this.emit('light-trigger', lightTriggerValue);
+        self.emit('light-trigger', lightTriggerValue);
       }
       if (soundTriggerValue)
       {
-        this.emit('sound-trigger', soundTriggerValue);
+        self.emit('sound-trigger', soundTriggerValue);
       }
     }
     else
@@ -186,7 +186,7 @@ Ambient.prototype._fetchTriggerValues = function() {
 Ambient.prototype._getFirmwareVersion = function(callback) {
   var self = this;
 
-  self._SPITransfer(new Buffer([FIRMWARE_CMD, 0x00, 0x00]), function(response) {
+  self.spi.transfer(new Buffer([FIRMWARE_CMD, 0x00, 0x00]), function spiComplete(err, response) {
     if (err) {
       return callback(err, null);
     }
@@ -262,7 +262,7 @@ Ambient.prototype._readBuffer = function(command, readLen, callback) {
   var packet = Buffer.concat([header, bytes, stop]);
 
   // Synchronously transfer command to read
-  self._SPITransfer(packet, function(data) {
+  self.spi.transfer(packet, function spiComplete(err, data) {
 
     // If the response is valid
     if (self._validateResponse(data, [PACKET_CONF, command, readLen/2]) &&
@@ -334,7 +334,7 @@ Ambient.prototype._setTrigger = function(triggerCmd, triggerVal, callback) {
   var packet = new Buffer([triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1), 0x00]);
 
   // Send it over SPI
-  self._SPITransfer(packet, function(data) {
+  self.spi.transfer(packet, function spiComplete(err, data) {
     // If it's a valud response
     if (self._validateResponse(data, [PACKET_CONF, triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1)]))
     {
@@ -357,26 +357,6 @@ Ambient.prototype._setTrigger = function(triggerCmd, triggerVal, callback) {
       }
     }
   });
-};
-
-Ambient.prototype._SPITransfer = function(data, callback) {
-
-    // Pull Chip select down prior to transfer
-    this.chipSelect.low();
-
-    // Send over the data
-    var ret = this.spi.transferSync(data);
-
-    // Pull chip select back up
-    this.chipSelect.high();
-
-    // Call any callbacks
-    if (callback) {
-      callback(ret);
-    }
-
-    // Return the data
-    return ret;
 };
 
 Ambient.prototype._validateResponse = function(values, expected, callback) {
