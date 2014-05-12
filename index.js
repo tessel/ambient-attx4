@@ -156,7 +156,7 @@ Ambient.prototype._fetchTriggerValues = function() {
   var packet = new Buffer([FETCH_TRIGGER_CMD, 0x00, 0x00, 0x00, 0x00, 0x00]);
 
   // Transfer the command
-  self._SPITransfer(packet, function(err, response) {
+  self.spi.transfer(packet, function spiComplete(err, response) {
     if (self._validateResponse(response, [PACKET_CONF, FETCH_TRIGGER_CMD]))
     {
       // make a buffer with the cmd and cmd_echo spliced out
@@ -186,7 +186,7 @@ Ambient.prototype._fetchTriggerValues = function() {
 Ambient.prototype._getFirmwareVersion = function(callback) {
   var self = this;
 
-  self._SPITransfer(new Buffer([FIRMWARE_CMD, 0x00, 0x00]), function(err, response) {
+  self.spi.transfer(new Buffer([FIRMWARE_CMD, 0x00, 0x00]), function spiComplete(err, response) {
     if (err) {
       return callback(err, null);
     }
@@ -262,7 +262,7 @@ Ambient.prototype._readBuffer = function(command, readLen, callback) {
   var packet = Buffer.concat([header, bytes, stop]);
 
   // Synchronously transfer command to read
-  self._SPITransfer(packet, function(err, data) {
+  self.spi.transfer(packet, function spiComplete(err, data) {
 
     // If the response is valid
     if (self._validateResponse(data, [PACKET_CONF, command, readLen/2]) &&
@@ -334,7 +334,7 @@ Ambient.prototype._setTrigger = function(triggerCmd, triggerVal, callback) {
   var packet = new Buffer([triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1), 0x00]);
 
   // Send it over SPI
-  self._SPITransfer(packet, function(err, data) {
+  self.spi.transfer(packet, function spiComplete(err, data) {
     // If it's a valud response
     if (self._validateResponse(data, [PACKET_CONF, triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1)]))
     {
@@ -355,18 +355,6 @@ Ambient.prototype._setTrigger = function(triggerCmd, triggerVal, callback) {
       if (callback) {
         callback(new Error("Invalid response from module for trigger set."));
       }
-    }
-  });
-};
-
-Ambient.prototype._SPITransfer = function(data, callback) {
-  var self = this;
-  // Send over the data
-  self.spi.transfer(data, function complete(err, ret) {
-
-    // Call any callbacks
-    if (callback) {
-      callback(err, ret);
     }
   });
 };
