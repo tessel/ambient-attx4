@@ -5,18 +5,13 @@ whenever a specified light or sound level
 trigger is met.
 *********************************************/
 
+// Any copyright is dedicated to the Public Domain.
+// http://creativecommons.org/publicdomain/zero/1.0/
+
 var tessel = require('tessel');
-var ambientPort = tessel.port('a');
+var ambient = require('../').use(tessel.port('A')); // Replace '../' with 'ambient-attx4' in your own code
 
-// Import the ambient library and use designated port
-require('../').use(ambientPort, function(err, ambient) {
-
-  // If there was a problem
-  if (err) {
-    // Report it and return
-    return console.log("Error initializing:", err);
-  }
-
+ambient.on('ready', function () {
  // Get a stream of light data
   ambient.on('light', function(data) {
     console.log("Got some  light: ", data);
@@ -38,11 +33,9 @@ require('../').use(ambientPort, function(err, ambient) {
     ambient.clearLightTrigger();
   });
 
-
   // Set a sound level trigger
   // The trigger is a float between 0 and 1
-  // Basically any sound will trip this trigger
-  ambient.setSoundTrigger(0.001);
+  ambient.setSoundTrigger(0.43);
 
   ambient.on('sound-trigger', function(data) {
 
@@ -51,6 +44,10 @@ require('../').use(ambientPort, function(err, ambient) {
     // Clear it
     ambient.clearSoundTrigger();
   });
+});
+
+ambient.on('error', function (err) {
+  console.log(err)
 });
 
 setInterval(function() {}, 200);
