@@ -11,7 +11,7 @@ trigger is met.
 var tessel = require('tessel');
 var ambient = require('../').use(tessel.port('A')); // Replace '../' with 'ambient-attx4' in your own code
 
-ambient.on('ready', function(err, ambient) {
+ambient.on('ready', function () {
  // Get a stream of light data
   ambient.on('light', function(data) {
     console.log("Got some  light: ", data);
