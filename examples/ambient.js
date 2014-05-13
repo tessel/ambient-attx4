@@ -33,7 +33,6 @@ ambient.on('ready', function(err, ambient) {
     ambient.clearLightTrigger();
   });
 
-
   // Set a sound level trigger
   // The trigger is a float between 0 and 1
   ambient.setSoundTrigger(0.43);
@@ -47,6 +46,8 @@ ambient.on('ready', function(err, ambient) {
   });
 });
 
-
+ambient.on('error', function (err) {
+  console.log(err)
+});
 
 setInterval(function() {}, 200);

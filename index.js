@@ -61,7 +61,6 @@ function Ambient(hardware, callback) {
 
   // Make sure we can communicate with the module
   self._establishCommunication(5, function(err, version) {
-
     if (err) {
       // Emit the error
       self.emit('error', err);
@@ -72,16 +71,14 @@ function Ambient(hardware, callback) {
       }
 
       return null;
-    }
-    else {
+    } else {
       self.connected = true;
 
       // Start listening for IRQ interrupts
       self.irq.watch('high', self._fetchTriggerValues.bind(self));
 
       // If someone starts listening
-      self.on('newListener', function(event)
-      {
+      self.on('newListener', function(event) {
         // and there weren't listeners before
         if (!self.listeners(event).length)
         {
@@ -129,7 +126,10 @@ Ambient.prototype._establishCommunication = function(retries, callback){
       // If there are no more retries possible
       if (!retries) {
         // Throw an error and return
-        return callback && callback(new Error("Can't connect with module..."));
+        if (callback) {
+          callback(err);
+        }
+        return;
       }
       // Else call recursively
       else {
@@ -185,21 +185,16 @@ Ambient.prototype._fetchTriggerValues = function() {
 
 Ambient.prototype._getFirmwareVersion = function(callback) {
   var self = this;
-
   self.spi.transfer(new Buffer([FIRMWARE_CMD, 0x00, 0x00]), function spiComplete(err, response) {
     if (err) {
       return callback(err, null);
-    }
-    else if (self._validateResponse(response, [false, FIRMWARE_CMD]) && response.length === 3)
-    {
+    } else if (self._validateResponse(response, [false, FIRMWARE_CMD]) && response.length === 3) {
       if (callback) {
         callback(null, response[2]);
       }
-    }
-    else
-    {
+    } else {
       if (callback) {
-        callback(new Error("Error retrieving Firmware Version"));
+        callback(new Error("Error retrieving firmware version"));
       }
     }
   });
@@ -232,7 +227,7 @@ Ambient.prototype._pollBuffers = function() {
   if (!self.connected) {
     self._establishCommunication(5, function(err) {
       if (err) {
-        throw new Error("Can't communicate with module...");
+        self.emit('error', new Error("Can't communicate with module..."));
       }
     });
   }
