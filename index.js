@@ -12,6 +12,7 @@ var EventEmitter = require('events').EventEmitter;
 
 // Max 10 (16 bit) data chunks
 var AMBIENT_BUF_SIZE = 10 * 2;
+var AMBIENT_SINGLE_BYTE = 1 * 2;
 var MAX_AMBIENT_VALUE = 1024;
 
 var ACK_CMD = 0;
@@ -202,8 +203,8 @@ Ambient.prototype._getFirmwareVersion = function(callback) {
 
 Ambient.prototype._getSingleDatum = function(command, callback) {
 
-  // Read the buffer but only 1 byte
-  this._readBuffer(command, 1, callback);
+  // Read the buffer but only 1 16-bit wordbyte
+  this._readBuffer(command, AMBIENT_SINGLE_BYTE, callback);
 };
 
 Ambient.prototype._normalizeBuffer = function(buf) {
@@ -264,6 +265,10 @@ Ambient.prototype._readBuffer = function(command, readLen, callback) {
       data[data.length-1] === STOP_CONF) {
 
       data = self._normalizeBuffer(data.slice(header.length, data.length-1));
+
+      if (data.length === 1) {
+        data = data[0];
+      }
 
       var event = (command == LIGHT_CMD ? "light" : "sound");
 
