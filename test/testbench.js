@@ -1,196 +1,53 @@
-// Copyright 2014 Technical Machine, Inc. See the COPYRIGHT
-// file at the top-level directory of this distribution.
-//
-// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
-// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
-// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
-// option. This file may not be copied, modified, or distributed
-// except according to those terms.
+/*********************************************
+This ambient module example reports sound and
+light levels to the console, and console.logs
+whenever a specified light or sound level
+trigger is met.
+*********************************************/
+
+// Any copyright is dedicated to the Public Domain.
+// http://creativecommons.org/publicdomain/zero/1.0/
 
 var tessel = require('tessel');
-var ambientPort = tessel.port('a');
+var ambient = require('../').use(tessel.port('A')); // Replace '../' with 'ambient-attx4' in your own code
 
-var failedLED = tessel.led(2);
-var passedLED = tessel.led(1);
-var failed = false;
+ambient.on('ready', function () {
+ // // Get a stream of light data
+ //  ambient.on('light', function(data) {
+ //    console.log("Got some  light: ", data);
+ //  });
 
-var ambientDriver = require('../index.js');
-var ambientTest;
+  // Get a stream of sound level data
+  // ambient.on('sound', function(data) {
+  //   console.log("Got some  sound: ", data);
+  // });
 
-var lightTriggerTest = true;
+  // Set trigger levels
+  // The trigger value is a float between zero to 1
+  ambient.setLightTrigger(0.15);
 
-var soundTriggerVal = 0.30;
-var lightTriggerVal = 0.20;
+  ambient.on('light-trigger', function(data) {
+    console.log("Our light trigger was hit:", data);
 
-ambientTest = ambientDriver.use(ambientPort, function(err, ambient) {
-  ambientTest = ambient;
+    // Clear the trigger so it stops firing
+    // ambient.clearLightTrigger();
+  });
 
-  if (!failModule("Connecting To Module.", err)) 
-  {
-    ambientTest.once('ready', function() {
-      console.log("Connected successfully! Testing Light...");
-      testLightDetection(function() {
-        testSoundDetection(function() {
-          testSoundTrigger(function() {
-            if (lightTriggerTest) {
-              testLightTrigger(function() {
-                passModule();
-              });
-            }
-            else {
-              passModule();
-            }
-          });
-        });
-      });
-    });
-  }
+  // Set a sound level trigger
+  // The trigger is a float between 0 and 1
+  ambient.setSoundTrigger(0.08);
+
+  ambient.on('sound-trigger', function(data) {
+
+    console.log("Something happened with sound: ", data);
+
+    // Clear it
+    // ambient.clearSoundTrigger();
+  });
 });
 
-function testLightDetection(callback) {
+ambient.on('error', function (err) {
+  console.log(err)
+});
 
-  ambientTest.getLightLevel(function(err, data) {
-
-    if (!failModule("Testing Single Light Level read.", err)) 
-    {
-        console.log("ambient light detected: ", data);
-        if (isValidData(data))
-        {
-          testLightStream(callback);
-        }
-    }
-  });
-}
-
-function testLightStream(callback) {
-  var counter = 0;
-  ambientTest.on('light', function(data)
-  {
-    counter++;
-    console.log("Found light!", data);
-    if (counter == 3)
-    {
-      this.removeAllListeners("light");
-      if (isValidData(data))
-      {
-        console.log("Light Detection Passed. Testing Sound...")
-        callback && callback();
-      }
-      else
-      {
-        return failModule("Detecting Light", new Error("Invalid light data..."));
-      }
-    } 
-  });
-}
-
-var counter = 0;
-function lightFound(callback, data) {
-  counter++;
-  console.log("Found light!", data);
-  if (counter >= 2) 
-  {
-    console.log("Should be removing listener...");
-    this.removeListener("light", lightFound);
-  }
-}
-
-function testSoundDetection(callback) {
-  ambientTest.getSoundLevel(function(err, data) {
-
-    if (!failModule("Testing Single Sound Level read.", err)) 
-    {
-        console.log("ambient sound detected: ", data);
-        if (isValidData(data))
-        {
-          testSoundStream(callback);
-        }
-    }
-  });
-}
-
-function testSoundStream(callback) {
-  var counter = 0;
-  ambientTest.on('sound', function(data)
-  {
-    counter++;
-    console.log("Found sound!", data);
-    if (counter == 3)
-    {
-      this.removeAllListeners("sound");
-      if (isValidData(data))
-      {
-        console.log("Sound Detection Passed!")
-        callback && callback();
-      }
-      else
-      {
-        return failModule("Detecting Sound", new Error("Invalid sound data..."));
-      }
-    } 
-  });
-}
-
-function testLightTrigger(callback) {
-  console.log("Testing light trigger...");
-  ambientTest.once('light-trigger', function(value){
-    console.log("Light trigger hit!", value);
-    ambientTest.clearLightTrigger(callback);
-  })
-  ambientTest.setLightTrigger(lightTriggerVal, function(err, val) {
-    if (!failModule("Setting light trigger value", err))
-    {
-      console.log("Set light trigger value. Waiting for bright lights...");
-    }
-  });
-}
-
-function testSoundTrigger(callback) {
-  console.log("Testing sound trigger...");
-  ambientTest.once('sound-trigger', function(value){
-    console.log("Sound trigger hit!", value);
-    ambientTest.clearSoundTrigger(callback);
-  })
-  ambientTest.setSoundTrigger(soundTriggerVal, function(err, val)
-  {
-    if (!failModule("Setting sound trigger value", err))
-    {
-      console.log("Set sound trigger value. Waiting for clap...");
-    }
-  })
-}
-function passModule() {
-  if (!failed) 
-  {
-    failedLED.output().low();
-    passedLED.output().high();
-    console.log("Test Passed!");
-  }
-}
-
-function failModule(test, err) {
-  if (!failed && err) 
-  {
-    failed = true;
-    passedLED.output().low();
-    failedLED.output().high();
-    console.log(test, "Failed.")
-    console.log("Error: ", err);
-    return 1;
-  }
-  return 0;
-}
-
-function isValidData(data) {
-  var res = false;
-  for (var datum in data) {
-    if (datum != 0 || data != 1.0) {
-      res = true;
-    }
-  }
-  return res;
-}
-
-setInterval(function() {
-  console.log("Stay alive...");
-}, 20000);
+setInterval(function() {}, 200);
