@@ -18,6 +18,7 @@ ambient.on('ready', function () {
     this.removeListener('light', listener);
     if (++count >= 2) {
       ambient.disable();
+      process.exit(0);
     }
   });
 
@@ -27,6 +28,7 @@ ambient.on('ready', function () {
     this.removeListener('sound', listener);
     if (++count >= 2) {
       ambient.disable();
+      process.exit(0);
     }
   });
 
