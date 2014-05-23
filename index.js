@@ -159,7 +159,8 @@ Ambient.prototype._fetchTriggerValues = function() {
       var lightTriggerValue = self._normalizeValue(data.readUInt16BE(0));
       var soundTriggerValue = self._normalizeValue(data.readUInt16BE(2));
 
-      self.irq.watch('high', self._fetchTriggerValues.bind(self));
+      self.irqwatcher = self._fetchTriggerValues.bind(self);
+      self.irq.watch('high', self.irqwatcher);
 
       if (lightTriggerValue)
       {
@@ -306,12 +307,19 @@ Ambient.prototype._setListening = function(enable, event) {
       // start polling
       this.pollInterval = setInterval(this._pollBuffers.bind(this), this.pollingFrequency);
     }
-    else
+    else if (this.pollInterval != null)
     {
       // stop polling
       clearInterval(this.pollInterval);
+      this.pollInterval = null;
+      this.irq.cancelWatch('high', this.irqwatcher);
     }
   }
+};
+
+Ambient.prototype.disable = function () {
+  this._setListening(false, 'light');
+  this._setListening(false, 'sound');
 };
 
 Ambient.prototype._setTrigger = function(triggerCmd, triggerVal, callback) {
