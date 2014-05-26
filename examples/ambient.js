@@ -1,12 +1,12 @@
+// Any copyright is dedicated to the Public Domain.
+// http://creativecommons.org/publicdomain/zero/1.0/
+
 /*********************************************
 This ambient module example reports sound and
 light levels to the console, and console.logs
 whenever a specified light or sound level
 trigger is met.
 *********************************************/
-
-// Any copyright is dedicated to the Public Domain.
-// http://creativecommons.org/publicdomain/zero/1.0/
 
 var tessel = require('tessel');
 var ambient = require('../').use(tessel.port('A')); // Replace '../' with 'ambient-attx4' in your own code
