@@ -159,9 +159,6 @@ Ambient.prototype._fetchTriggerValues = function() {
       var lightTriggerValue = self._normalizeValue(data.readUInt16BE(0));
       var soundTriggerValue = self._normalizeValue(data.readUInt16BE(2));
 
-      self.irqwatcher = self._fetchTriggerValues.bind(self);
-      self.irq.watch('high', self.irqwatcher);
-
       if (lightTriggerValue)
       {
         self.emit('light-trigger', lightTriggerValue);
@@ -170,6 +167,11 @@ Ambient.prototype._fetchTriggerValues = function() {
       {
         self.emit('sound-trigger', soundTriggerValue);
       }
+
+      setImmediate(function() {
+        self.irqwatcher = self._fetchTriggerValues.bind(self);
+        self.irq.watch('high', self.irqwatcher);
+      });
     }
     else
     {
