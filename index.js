@@ -159,11 +159,11 @@ Ambient.prototype._fetchTriggerValues = function() {
       var lightTriggerValue = self._normalizeValue(data.readUInt16BE(0));
       var soundTriggerValue = self._normalizeValue(data.readUInt16BE(2));
 
-      if (lightTriggerValue)
+      if (lightTriggerValue && self.lightTriggerLevel)
       {
         self.emit('light-trigger', lightTriggerValue);
       }
-      if (soundTriggerValue)
+      if (soundTriggerValue && self.soundTriggerLevel)
       {
         self.emit('sound-trigger', soundTriggerValue);
       }
