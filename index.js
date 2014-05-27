@@ -30,17 +30,17 @@ var ACK_CONF = 0x33;
 function Ambient(hardware, callback) {
 
   // Set the reset pin
-  this.reset = hardware.digital[2];
+  this.reset = hardware.digital[1];
 
   // Make sure you pull this high so we don't keep the module reset.
   this.reset.output().high();
 
   // Set up our IRQ as a pull down
-  this.irq = hardware.digital[3].input().rawWrite('low');
+  this.irq = hardware.digital[2].input().rawWrite('low');
 
   // We're going to handle the chip select ourselves for more
   // sending flexibility
-  this.chipSelect = hardware.digital[1].output().high();
+  this.chipSelect = hardware.digital[0].output().high();
 
   // Global connected. We may use this in the future
   this.connected = false;
