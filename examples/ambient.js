@@ -31,6 +31,12 @@ ambient.on('ready', function () {
 
     // Clear the trigger so it stops firing
     ambient.clearLightTrigger();
+    //After 1.5 seconds reset light trigger
+    setTimeout(function () { 
+
+        ambient.setLightTrigger(0.15);
+
+    },1500);
   });
 
   // Set a sound level trigger
@@ -43,6 +49,14 @@ ambient.on('ready', function () {
 
     // Clear it
     ambient.clearSoundTrigger();
+
+    //After 1.5 seconds reset sound trigger
+    setTimeout(function () { 
+      
+        ambient.setSoundTrigger(0.43);
+
+    },1500);
+
   });
 });
 
@@ -50,4 +64,3 @@ ambient.on('error', function (err) {
   console.log(err)
 });
 
-setInterval(function() {}, 200);
