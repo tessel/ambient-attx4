@@ -344,6 +344,17 @@ Ambient.prototype._setTrigger = function(triggerCmd, triggerVal, callback) {
 
       // Get the event title
       var event = (triggerCmd == LIGHT_TRIGGER_CMD ? "light-trigger-set" : "sound-trigger-set");
+      
+      // Store the trigger value locally
+      if (triggerCmd == LIGHT_TRIGGER_CMD) 
+      {
+        self.lightTriggerLevel = triggerVal
+      }
+      else
+      {
+        self.soundTriggerLevel = triggerVal;
+      }
+
       // Emit the event
       self.emit(event, triggerVal);
       // Return data
