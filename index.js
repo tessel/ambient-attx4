@@ -159,17 +159,19 @@ Ambient.prototype._fetchTriggerValues = function() {
       var lightTriggerValue = self._normalizeValue(data.readUInt16BE(0));
       var soundTriggerValue = self._normalizeValue(data.readUInt16BE(2));
 
-      self.irqwatcher = self._fetchTriggerValues.bind(self);
-      self.irq.watch('high', self.irqwatcher);
-
-      if (lightTriggerValue)
+      if (lightTriggerValue && self.lightTriggerLevel)
       {
         self.emit('light-trigger', lightTriggerValue);
       }
-      if (soundTriggerValue)
+      if (soundTriggerValue && self.soundTriggerLevel)
       {
         self.emit('sound-trigger', soundTriggerValue);
       }
+
+      setImmediate(function() {
+        self.irqwatcher = self._fetchTriggerValues.bind(self);
+        self.irq.watch('high', self.irqwatcher);
+      });
     }
     else
     {
@@ -341,7 +343,18 @@ Ambient.prototype._setTrigger = function(triggerCmd, triggerVal, callback) {
     {
 
       // Get the event title
-      var event = (command == LIGHT_TRIGGER_CMD ? "light-trigger-set" : "sound-trigger-set");
+      var event = (triggerCmd == LIGHT_TRIGGER_CMD ? "light-trigger-set" : "sound-trigger-set");
+      
+      // Store the trigger value locally
+      if (triggerCmd == LIGHT_TRIGGER_CMD) 
+      {
+        self.lightTriggerLevel = triggerVal
+      }
+      else
+      {
+        self.soundTriggerLevel = triggerVal;
+      }
+
       // Emit the event
       self.emit(event, triggerVal);
       // Return data
