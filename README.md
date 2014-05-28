@@ -93,7 +93,7 @@ setInterval(function() {}, 200);
 
 ##### * `ambient.setLightTrigger(triggerVal, callback(err, triggerVal))` Sets a trigger to emit a 'light-trigger' event when triggerVal is reached. `triggerVal` is a float between 0 and 1.0.
 
-##### * `ambient`.setSoundTrigger(triggerVal, callback(err, triggerVal))` Sets a trigger to emit a 'sound-trigger' event when triggerVal is reached. `triggerVal` is a float between 0 and 1.0.
+##### * `ambient.setSoundTrigger(triggerVal, callback(err, triggerVal))` Sets a trigger to emit a 'sound-trigger' event when triggerVal is reached. `triggerVal` is a float between 0 and 1.0.
 
 ##Events
 
