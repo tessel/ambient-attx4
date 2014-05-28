@@ -83,11 +83,11 @@ setInterval(function() {}, 200);
 
 ##### * `ambient.clearSoundTrigger(callback(err, triggerVal))` Clears trigger listener for sound trigger.
 
-##### * `ambient.getLightBuffer(callback(err, data))` Gets the last 20 light readings.
+##### * `ambient.getLightBuffer(callback(err, data))` Gets the last 10 light readings.
 
 ##### * `ambient.getLightLevel(callback(err, data))` Gets a single data point of light level.
 
-##### * `ambient.getSoundBuffer(callback(err, data))` Gets the last 20 sound readings.
+##### * `ambient.getSoundBuffer(callback(err, data))` Gets the last 10 sound readings.
 
 ##### * `ambient.getSoundLevel(callback(err, data))` Gets a single data point of sound level.
 
