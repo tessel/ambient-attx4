@@ -76,7 +76,7 @@ function Ambient(hardware, callback) {
       self.connected = true;
 
       // Start listening for IRQ interrupts
-      self.irq.watch('high', self._fetchTriggerValues.bind(self));
+      self.irq.once('high', self._fetchTriggerValues.bind(self));
 
       // If someone starts listening
       self.on('newListener', function(event) {
@@ -170,7 +170,7 @@ Ambient.prototype._fetchTriggerValues = function() {
 
       setImmediate(function() {
         self.irqwatcher = self._fetchTriggerValues.bind(self);
-        self.irq.watch('high', self.irqwatcher);
+        self.irq.once('high', self.irqwatcher);
       });
     }
     else
@@ -314,7 +314,7 @@ Ambient.prototype._setListening = function(enable, event) {
       // stop polling
       clearInterval(this.pollInterval);
       this.pollInterval = null;
-      this.irq.cancelWatch('high', this.irqwatcher);
+      this.irq.removeListener('high', this.irqwatcher);
     }
   }
 };
