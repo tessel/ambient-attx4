@@ -12,15 +12,15 @@ var ambient = require('../').use(tessel.port('A')); // Replace '../' with 'ambie
 ambient.on('ready', function () {
 
   setInterval(function () {
-  	  // Get the 10 most recent data readings
-	  ambient.getLightBuffer(function(err, data) {
-	 	  console.log('Light data, buffer method: ' + data);
-	  });
+    // Get the 10 most recent data readings
+    ambient.getLightBuffer(function(err, data) {
+      console.log('Light data, buffer method: ' + data);
+    });
   }, 2000);
 
   // Get a stream of the data readings
   ambient.on('light', function (lightData) {
-	  console.log('Light data, stream method: ' + lightData);
+    console.log('Light data, stream method: ' + lightData);
   });
   
 });
