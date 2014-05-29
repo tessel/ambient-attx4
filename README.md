@@ -30,7 +30,7 @@ trigger is met.
 *********************************************/
 
 var tessel = require('tessel');
-var ambient = require('../').use(tessel.port['A']); // Replace '../' with 'ambient-attx4' in your own code
+var ambient = require('ambient-attx4').use(tessel.port['A']);
 
 ambient.on('ready', function () {
  // Get a stream of light data
