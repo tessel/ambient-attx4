@@ -11,9 +11,6 @@ You'll notice that the light readings seem to be logarithmic - when making the a
 
 If you run into any issues you can ask for support on the [Ambient Module Forums](http://forums.tessel.io/category/ambient).
 
-###TODO
-Make functions to trigger when light/sound drops below a level (currently supports "light turned on" but not "light turned off")
-
 ###Installation
 ```sh
 npm install ambient-attx4
@@ -121,7 +118,7 @@ ambient.on('error', function (err) {
 &#x20;<a href="#api-ambient-on-sound-trigger-callback-soundTriggerValue-Emitted-upon-crossing-sound-trigger-threshold" name="api-ambient-on-sound-trigger-callback-soundTriggerValue-Emitted-upon-crossing-sound-trigger-threshold">#</a> ambient<b>.on</b>( 'sound-trigger', callback(soundTriggerValue) ) Emitted upon crossing sound trigger threshold.  
 
 ###Further Examples  
-[Ambient Stream](https://github.com/tessel/ambient-attx4/blob/master/examples/ambient_stream.js). This example demonstrates the two methods for getting the ambient module's data. 
+* [Ambient Stream](https://github.com/tessel/ambient-attx4/blob/master/examples/ambient_stream.js). This example demonstrates the two methods for getting the ambient module's data. 
 
 ### License  
 MIT
