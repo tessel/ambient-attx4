@@ -3,7 +3,7 @@
 
 /*********************************************
 This example demonstrates the two methods for
-getting the ambient module's ambient data. 
+getting the ambient module's data. 
 *********************************************/
 
 var tessel = require('tessel');
