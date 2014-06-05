@@ -121,5 +121,4 @@ ambient.on('error', function (err) {
 * [Ambient Stream](https://github.com/tessel/ambient-attx4/blob/master/examples/ambient_stream.js). This example demonstrates the two methods for getting the ambient module's data. 
 
 ### License  
-MIT
-APACHE
+MIT or Apache 2.0, at your option
