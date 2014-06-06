@@ -18,9 +18,6 @@ npm install ambient-attx4
 
 ###Example
 ```js
-// Any copyright is dedicated to the Public Domain.
-// http://creativecommons.org/publicdomain/zero/1.0/
-
 /*********************************************
 This ambient module example reports sound and
 light levels to the console, and console.logs
