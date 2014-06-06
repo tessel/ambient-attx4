@@ -7,7 +7,9 @@ getting the ambient module's data.
 *********************************************/
 
 var tessel = require('tessel');
-var ambient = require('../').use(tessel.port['A']); // Replace '../' with 'ambient-attx4' in your own code
+var ambientlib = require('../');// Replace '../' with 'ambient-attx4' in your own code
+
+var ambient = ambientlib.use(tessel.port['A']); 
 
 ambient.on('ready', function () {
 
