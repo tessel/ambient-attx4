@@ -26,13 +26,10 @@ trigger is met.
 *********************************************/
 
 var tessel = require('tessel');
-<<<<<<< HEAD
-var ambient = require('ambient-attx4').use(tessel.port['A']);
-=======
+
 var ambientlib = require('../');// Replace '../' with 'ambient-attx4' in your own code
 
 var ambient = ambientlib.use(tessel.port['A']); 
->>>>>>> polishing the readme and examples
 
 ambient.on('ready', function () {
  // Get a stream of light data
@@ -56,15 +53,9 @@ ambient.on('ready', function () {
     ambient.clearLightTrigger();
     //After 1.5 seconds reset light trigger
     setTimeout(function () { 
-<<<<<<< HEAD
 
         ambient.setLightTrigger(0.15);
 
-=======
-
-        ambient.setLightTrigger(0.15);
-
->>>>>>> polishing the readme and examples
     },1500);
   });
 
