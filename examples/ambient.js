@@ -19,7 +19,7 @@ ambient.on('ready', function () {
       ambient.getLightLevel( function(err, sdata) {
         console.log("Light level: ", ldata, "Sound Level: ", sdata);
     });
-  })}, 3000); // The readings will happen every three seconds unless the trigger is hit
+  })}, 500); // The readings will happen every .5 seconds unless the trigger is hit
 
   ambient.setLightTrigger(0.5);
 
