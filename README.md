@@ -25,7 +25,7 @@ specified light or sound level trigger is met.
 *********************************************/
 
 var tessel = require('tessel');
-var ambientlib = require('ambient-attx4');
+var ambientlib = require('../');// Replace '../' with 'ambient-attx4' in your own code
 
 var ambient = ambientlib.use(tessel.port['A']);
 
@@ -34,9 +34,9 @@ ambient.on('ready', function () {
   setInterval( function () {
     ambient.getLightLevel( function(err, ldata) {
       ambient.getLightLevel( function(err, sdata) {
-        console.log("Light level: ", ldata, "Sound Level: ", sdata);
+        console.log("Light level:", ldata.toFixed(8), " ", "Sound Level:", sdata.toFixed(8));
     });
-  })}, 3000); // The readings will happen every three seconds unless the trigger is hit
+  })}, 500); // The readings will happen every .5 seconds unless the trigger is hit
 
   ambient.setLightTrigger(0.5);
 
