@@ -2,32 +2,29 @@
 // http://creativecommons.org/publicdomain/zero/1.0/
 
 /*********************************************
-This ambient module example reports sound and
-light levels to the console, and console.logs
-whenever a specified light or sound level
-trigger is met.
+This ambient module example console.logs 
+ambient light and sound levels and whenever a 
+specified light or sound level trigger is met.
 *********************************************/
 
 var tessel = require('tessel');
 var ambientlib = require('../');// Replace '../' with 'ambient-attx4' in your own code
 
-var ambient = ambientlib.use(tessel.port['A']); 
+var ambient = ambientlib.use(tessel.port['A']);
 
 ambient.on('ready', function () {
- // Get a stream of light data
-  ambient.on('light', function(data) {
-    console.log("Got some  light: ", data);
-  });
+ // Get points of light and sound data.
+  setInterval( function () {
+    ambient.getLightLevel( function(err, ldata) {
+      ambient.getLightLevel( function(err, sdata) {
+        console.log("Light level:", ldata.toFixed(8), " ", "Sound Level:", sdata.toFixed(8));
+    });
+  })}, 500); // The readings will happen every .5 seconds unless the trigger is hit
 
-  // Get a stream of sound level data
-  ambient.on('sound', function(data) {
-    console.log("Got some  sound: ", data);
-  });
+  ambient.setLightTrigger(0.5);
 
-  // Set trigger levels
-  // The trigger value is a float between zero to 1
-  ambient.setLightTrigger(0.15);
-
+  // Set a light level trigger
+  // The trigger is a float between 0 and 1
   ambient.on('light-trigger', function(data) {
     console.log("Our light trigger was hit:", data);
 
@@ -36,17 +33,16 @@ ambient.on('ready', function () {
     //After 1.5 seconds reset light trigger
     setTimeout(function () { 
 
-        ambient.setLightTrigger(0.15);
+        ambient.setLightTrigger(0.5);
 
     },1500);
   });
 
   // Set a sound level trigger
   // The trigger is a float between 0 and 1
-  ambient.setSoundTrigger(0.43);
+  ambient.setSoundTrigger(0.1);
 
   ambient.on('sound-trigger', function(data) {
-
     console.log("Something happened with sound: ", data);
 
     // Clear it
@@ -55,7 +51,7 @@ ambient.on('ready', function () {
     //After 1.5 seconds reset sound trigger
     setTimeout(function () { 
       
-        ambient.setSoundTrigger(0.43);
+        ambient.setSoundTrigger(0.1);
 
     },1500);
 
@@ -65,4 +61,3 @@ ambient.on('ready', function () {
 ambient.on('error', function (err) {
   console.log(err)
 });
-
