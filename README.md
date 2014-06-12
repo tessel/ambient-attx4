@@ -127,7 +127,7 @@ ambient.on('error', function (err) {
  Emitted upon crossing sound trigger threshold.  
 
 ###Further Examples  
-* [Ambient Stream](https://github.com/tessel/ambient-attx4/blob/master/examples/ambient_stream.js). This example demonstrates the two methods for getting the ambient module's data. 
+* [Ambient Realtime](https://github.com/tessel/ambient-attx4/blob/master/examples/ambient_realtime.js). This example demonstrates the two methods for getting the ambient module's data. 
 
 ### License
 MIT or Apache 2.0, at your option  
