@@ -8,7 +8,7 @@ specified light or sound level trigger is met.
 *********************************************/
 
 var tessel = require('tessel');
-var ambientlib = require('../');// Replace '../' with 'ambient-attx4' in your own code
+var ambientlib = require('../'); // Replace '../' with 'ambient-attx4' in your own code
 
 var ambient = ambientlib.use(tessel.port['A']);
 
