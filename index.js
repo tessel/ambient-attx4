@@ -114,6 +114,7 @@ Ambient.prototype._establishCommunication = function(retries, callback){
   // Grab the firmware version
   self._getFirmwareVersion(function(err, version) {
     // If it didn't work
+    console.log('firmware version', err, version);
     if (err) {
       // Subtract number of retries
       retries--;

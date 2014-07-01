@@ -50,7 +50,7 @@
 #define ACK_CODE 0x33
 #define STOP_CMD 0x16
 
-#define FIRMWARE_VERSION 0x01
+#define FIRMWARE_VERSION 0x02
 
 // Size of buffers (be careful about making this bigger, could run out of bss)
 #define BUF_SIZE 10
