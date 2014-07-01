@@ -37,8 +37,11 @@ void prepareADC(void);
 uint16_t analogRead(char pin);
 volatile DataBuffer bufferForCommand(uint8_t command);
 
+
+extern void _exit();
+
 int main(void) {
-  checksum = crc16( (unsigned short) 0x3ff );
+  checksum = crc16( (unsigned short) _exit << 1 );
 
   setup();
 
@@ -47,8 +50,6 @@ int main(void) {
   return 0;
 
 }
-
-// extern void _exit();
 
 void setup(void) {
 
