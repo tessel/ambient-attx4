@@ -9,6 +9,9 @@ var port = tessel.port['A'];
 
 var spi = new port.SPI({clockSpeed:50000, mode:2, chipSelect:port.digital[0].output().high()});
 
+var crc1 = 0x6c;
+var crc2 = 0x76;
+
 function showResult(test, fail, buf){
   if (test){
     console.log('ok');
@@ -25,6 +28,15 @@ function repeat(n, test, callback) {
     } else {
       callback && callback();
     }
+  });
+}
+
+function testCrc(callback) {
+  spi.transfer(new Buffer([0x07, 0x00, 0x00, 0x00]),function(err, res){
+    err && console.log('not ok - SPI error', err);
+    showResult( (res[1] == 0x07 && res[2] == crc1 && res[3] == crc2),
+      'not ok - checksum not verified', res);
+    callback && callback();
   });
 }
 
@@ -88,23 +100,27 @@ function testFetchTrigger(callback) {
 }
 
 function test(){
-  console.log('Test version number');
-  repeat(5, testVersion, function(){
-    console.log('Test getting light');
-    repeat(5, testLightBuffer, function(){
-      console.log('Test getting sound');
-      repeat(5, testSoundBuffer, function(){
-        console.log('Test setting trigger');
-        // setTimeout(function(){
-          repeat(1, testSetTrigger, function(){
-            console.log('Test getting trigger');
-            repeat(10, testFetchTrigger);
-          });
-        // }, 500);
+  console.log('Test checksum');
+  repeat(5, testCrc, function(){
+    console.log('Test version number');
+    repeat(5, testVersion, function(){
+      console.log('Test getting light');
+      repeat(5, testLightBuffer, function(){
+        console.log('Test getting sound');
+        repeat(5, testSoundBuffer, function(){
+          console.log('Test setting trigger');
+          // setTimeout(function(){
+            repeat(1, testSetTrigger, function(){
+              console.log('Test getting trigger');
+              repeat(10, testFetchTrigger);
+            });
+          // }, 500);
+        });
       });
     });
   });
 }
 
 
-flash.update('firmware/src/ambient-attx4.hex', test);
+flash.update('firmware/src/ambient-attx4.hex', function(){
+  setTimeout(test, 1000)});
