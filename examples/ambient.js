@@ -2,8 +2,8 @@
 // http://creativecommons.org/publicdomain/zero/1.0/
 
 /*********************************************
-This ambient module example console.logs 
-ambient light and sound levels and whenever a 
+This ambient module example console.logs
+ambient light and sound levels and whenever a
 specified light or sound level trigger is met.
 *********************************************/
 
@@ -31,7 +31,7 @@ ambient.on('ready', function () {
     // Clear the trigger so it stops firing
     ambient.clearLightTrigger();
     //After 1.5 seconds reset light trigger
-    setTimeout(function () { 
+    setTimeout(function () {
 
         ambient.setLightTrigger(0.5);
 
@@ -49,8 +49,8 @@ ambient.on('ready', function () {
     ambient.clearSoundTrigger();
 
     //After 1.5 seconds reset sound trigger
-    setTimeout(function () { 
-      
+    setTimeout(function () {
+
         ambient.setSoundTrigger(0.1);
 
     },1500);
