@@ -22,6 +22,8 @@ volatile uint16_t soundTrigger = 0x00;
 // Value read on trigger hit
 volatile uint16_t soundTriggerReadVal = 0x00;
 
+// Program Flash Checksum
+volatile unsigned short checksum = 0xffff;
 
 // A buffer and buffer indexer for each source
 volatile DataBuffer LightBuffer;
@@ -36,6 +38,7 @@ uint16_t analogRead(char pin);
 volatile DataBuffer bufferForCommand(uint8_t command);
 
 int main(void) {
+  checksum = crc16( (unsigned short) 0x3ff );
 
   setup();
 
@@ -45,9 +48,11 @@ int main(void) {
 
 }
 
+// extern void _exit();
+
 void setup(void) {
-  
-  // Turn off interrupts  
+
+  // Turn off interrupts
   cli();
 
   // Reset buffer locations
@@ -64,6 +69,7 @@ void setup(void) {
 
   // Unleash the interrupts!
   sei();
+
 }
 
 void setupIO(void) {
@@ -72,10 +78,10 @@ void setupIO(void) {
 
   // Make the ambient light as input
   cbi(DDRA, LIGHT_PIN);
-  
+
   // Make the Interrupt pin an output
   sbi(DDRB, IRQ_PIN);
-  
+
   // Pull it low
   cbi(PORTB, IRQ_PIN);
 
@@ -179,32 +185,32 @@ volatile uint16_t *triggerValueForCommand(uint8_t command) {
 }
 
 ISR(TIM1_COMPA_vect) {
-  
+
   LightBuffer.buffer[LightBuffer.bufferLocation++] = analogRead(LIGHT_PIN);
 
-  // If a light trigger has been set and the level is hit 
+  // If a light trigger has been set and the level is hit
   if (lightTrigger != 0 && LightBuffer.buffer[LightBuffer.bufferLocation - 1] >= lightTrigger) {
-    
+
     // Set the read value
     lightTriggerReadVal = LightBuffer.buffer[LightBuffer.bufferLocation - 1];
-    
+
     // Raise the interrupt pin
     sbi(PORTB, IRQ_PIN);
-    
+
   }
-  
+
   if (LightBuffer.bufferLocation == BUF_SIZE) {
     LightBuffer.bufferLocation = 0;
   }
-  
+
   SoundBuffer.buffer[SoundBuffer.bufferLocation++] = analogRead(SOUND_PIN);
-  
-    // If a loudness trigger has been set and the level is hit 
+
+    // If a loudness trigger has been set and the level is hit
   if (soundTrigger != 0 && SoundBuffer.buffer[SoundBuffer.bufferLocation - 1] >= soundTrigger) {
-    
+
     // Set the read value
     soundTriggerReadVal = SoundBuffer.buffer[SoundBuffer.bufferLocation - 1];
-    
+
     // Raise the interrupt pin
     sbi(PORTB, IRQ_PIN);
   }
@@ -215,80 +221,89 @@ ISR(TIM1_COMPA_vect) {
 }
 
 ISR(INT0_vect){
-  
+
   // Disable ADC timer for now
   cbi(TIMSK1, OCIE1A);
 
   // Start up slave
   spiX_initslave(0);
-  
+
   // Enable interrupts (SPI needs this)
   sei();
 
   //re-enable USI
-  USICR|=(1<<USIOIE)|(1<<USIWM0); 
+  USICR|=(1<<USIOIE)|(1<<USIWM0);
 
-  // put 'alive' bit 
-  spiX_put(ALIVE_CODE); 
+  // put 'alive' bit
+  spiX_put(ALIVE_CODE);
   spiX_wait();
-  
+
   // Grab the command
   char command = spiX_get();
   uint16_t value = -1;
-  
+
   // Initialize variables
   volatile char length = 0;
-  volatile DataBuffer dataBuffer;
+  DataBuffer dataBuffer;
   volatile uint8_t trigVal = 0;
-  
-   // Confirm command 
-  spiX_put(command); 
-  
+
+   // Confirm command
+  spiX_put(command);
+
   // Wait for it to be sent
   spiX_wait();
-  
+
   // Switch based on the command
-  switch(command){ 
-  
+  switch(command){
+
    // ACK command checks comms
-    case ACK_CMD:     
-    
+    case ACK_CMD:
+
       //Send ACK code
-      spiX_put(ACK_CODE); 
-      
+      spiX_put(ACK_CODE);
+
       // Wait for it to be sent
       spiX_wait();
       break;
+
+    // If the checksum is asked for
+    case CRC_CMD:
+      spiX_put((checksum >> 8) & 0xff);
+      spiX_wait();
+      spiX_put((checksum >> 0) & 0xff);
+      spiX_wait();
+      break;
+
     // If they want firmware version
     case FIRMWARE_CMD:
       // Send the firmware version
-      spiX_put(FIRMWARE_VERSION); 
+      spiX_put(FIRMWARE_VERSION);
       spiX_wait();
       break;
 
     // Routine for reading buffers
-    case LIGHT_CMD: 
+    case LIGHT_CMD:
     case SOUND_CMD:
-   
+
       // Grab requested buffer
-      dataBuffer = bufferForCommand(command); 
+      dataBuffer = bufferForCommand(command);
       // Grab read length
-      length = spiX_get(); 
+      length = spiX_get();
 
       // Echo read length
-      spiX_put(length); 
+      spiX_put(length);
       // Wait for echo to complete
       spiX_wait();
 
       // Iterate through buffer
       // Potential Bug: Could read at one index past the last recorded value. may need to decrement before putting
-      for(counter=0;counter<length;counter++){ 
+      for(counter=0;counter<length;counter++){
 
          // If the buffer is at 0
          if (dataBuffer.bufferLocation == 0) {
-           
+
            // Set it to the end of the buffer
-           dataBuffer.bufferLocation = (BUF_SIZE-1); 
+           dataBuffer.bufferLocation = (BUF_SIZE-1);
          }
 
         // Decrement buffer (we read going backwards)
@@ -306,15 +321,15 @@ ISR(INT0_vect){
         spiX_wait();
       }
 
-      
+
       // Put the stop command
       spiX_put(STOP_CMD);
-      
+
       // Wait for it to be sent
       spiX_wait();
 
       break;
-    
+
     case LIGHT_TRIGGER_CMD:
     case SOUND_TRIGGER_CMD:
 
@@ -332,7 +347,7 @@ ISR(INT0_vect){
 
       *(triggerValueForCommand(command)) = trigVal;
       break;
-   
+
    case TRIGGER_FETCH_CMD:
       // Put Light Trigger Val
       spiX_put(lightTriggerReadVal >> 8);
@@ -355,7 +370,7 @@ ISR(INT0_vect){
       spiX_wait();
 
         // Put Loudnesss Trigger Val
-      spiX_put(soundTriggerReadVal & 0xFF); 
+      spiX_put(soundTriggerReadVal & 0xFF);
 
       // Wait for it to go through
       spiX_wait();
@@ -368,14 +383,41 @@ ISR(INT0_vect){
 
       break;
  }
-  
+
   // Disable USI
   USICR&= ~(1<<USIOIE);
   USICR&= ~(1<<USIWM0);
 
   cbi(DDRA, MOSI);
   cbi(DDRA, MISO);
-  
-  // Re-enable ADC reads 
+
+  // Re-enable ADC reads
   sbi(TIMSK1, OCIE1A);
+}
+
+unsigned short crc16( unsigned short length)
+{
+      unsigned char i;
+      unsigned int data;
+      unsigned int crc = 0xffff;
+      char *data_p = 0x0000;
+
+      if (length == 0)
+            return (~crc);
+      do
+      {
+            for (i=0, data= pgm_read_byte(data_p++);
+                 i < 8;
+                 i++, data >>= 1)
+            {
+                  if ((crc & 0x0001) ^ (data & 0x0001))
+                        crc = (crc >> 1) ^ POLY;
+                  else  crc >>= 1;
+            }
+      } while (--length);
+      crc = ~crc;
+      data = crc;
+      crc = (crc << 8) | (data >> 8 & 0xff);
+
+      return (crc);
 }
