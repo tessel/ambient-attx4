@@ -4,10 +4,10 @@ var flash = require('../lib/firmware');
 
 var port = tessel.port['A'];
 
-// var reset = port.digital[1].output().low();
-// reset.output().high();
+var reset = port.digital[1];
+reset.output(true);
 
-var spi = new port.SPI({clockSpeed:50000, mode:2, chipSelect:port.digital[0].output().high()});
+var spi = new port.SPI({clockSpeed:50000, mode:2, chipSelect:port.digital[0].output(true)});
 
 var crc1 = 0x6c;
 var crc2 = 0x76;
@@ -121,6 +121,7 @@ function test(){
   });
 }
 
+test();
 
-flash.update('firmware/src/ambient-attx4.hex', function(){
-  setTimeout(test, 1000)});
+// flash.update('firmware/src/ambient-attx4.hex', function(){
+//   setTimeout(test, 1000)});
