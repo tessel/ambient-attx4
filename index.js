@@ -140,7 +140,7 @@ Ambient.prototype._establishCommunication = function(retries, callback){
     else {
       if (version < FIRMWARE_VERSION){
         console.log('New module firmware available - updating...');
-        self._updateFirmware(function(err){
+        self.updateFirmware(function(err){
           if (!err) {
             self.connected = true;
             callback && callback(null)
@@ -158,17 +158,17 @@ Ambient.prototype._establishCommunication = function(retries, callback){
   });
 };
 
-Ambient.prototype._updateFirmware = function(callback) {
+Ambient.prototype.updateFirmware = function(callback) {
   var self = this;
 
   firmware.update('firmware/src/ambient-attx4.hex', function(){
     setTimeout( function(){
-      self._getProgramCRC(5, callback);
+      self.readFirmwareCRC(5, callback);
     }, 500);
   });
 }
 
-Ambient.prototype._getProgramCRC = function(retries, callback) {
+Ambient.prototype.readFirmwareCRC = function(retries, callback) {
   var self = this;
   self.spi.transfer(new Buffer([CRC_CMD, 0x00, 0x00, 0x00]), function gotCRC(err, res){
     if (err) {
@@ -180,9 +180,9 @@ Ambient.prototype._getProgramCRC = function(retries, callback) {
     } else {
       retries--;
       if (retries > 0){
-        self._getProgramCRC(retries, callback);
+        self.readFirmwareCRC(retries, callback);
       } else {
-        self._updateFirmware(callback);
+        self.updateFirmware(callback);
       }
     }
   });
