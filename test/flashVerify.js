@@ -7,6 +7,8 @@ var port = tessel.port['A'];
 var reset = port.digital[1];
 reset.output(true);
 
+console.log('1..20');
+
 var spi = new port.SPI({clockSpeed:50000, mode:2, chipSelect:port.digital[0].output(true)});
 
 var crc1 = 0x2a;
@@ -100,22 +102,14 @@ function testFetchTrigger(callback) {
 }
 
 function test(){
-  console.log('Test checksum');
+  console.log('# Test checksum');
   repeat(5, testCrc, function(){
-    console.log('Test version number');
+    console.log('# Test version number');
     repeat(5, testVersion, function(){
-      console.log('Test getting light');
+      console.log('# Test getting light');
       repeat(5, testLightBuffer, function(){
-        console.log('Test getting sound');
-        repeat(5, testSoundBuffer, function(){
-          console.log('Test setting trigger');
-          // setTimeout(function(){
-            repeat(1, testSetTrigger, function(){
-              console.log('Test getting trigger');
-              repeat(10, testFetchTrigger);
-            });
-          // }, 500);
-        });
+        console.log('# Test getting sound');
+        repeat(5, testSoundBuffer);
       });
     });
   });
