@@ -11,8 +11,8 @@ console.log('1..20');
 
 var spi = new port.SPI({clockSpeed:50000, mode:2, chipSelect:port.digital[0].output(true)});
 
-var crc1 = 0x2a;
-var crc2 = 0xdb;
+var crc1 = 0xba;
+var crc2 = 0x67;
 
 function showResult(test, fail, buf){
   if (test){
