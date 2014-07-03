@@ -31,6 +31,7 @@
     "tinytap": "0.0.2"
   },
   "dependencies": {
-    "avr-isp": "0.0.1"
+    "avr-isp": "0.0.1",
+    "sync-queue": "0.0.1"
   }
 }
