@@ -34,6 +34,8 @@ var STOP_CONF = 0x16;
 var PACKET_CONF = 0x55;
 var ACK_CONF = 0x33;
 
+var FIRMWARE_FILE = 'firmware/src/ambient-attx4.hex';
+
 function Ambient(hardware, callback) {
 
   // Set the reset pin
@@ -140,7 +142,7 @@ Ambient.prototype._establishCommunication = function(retries, callback){
     else {
       if (version < FIRMWARE_VERSION){
         console.log('New module firmware available - updating...');
-        self.updateFirmware(function(err){
+        self.updateFirmware( FIRMWARE_FILE, function(err){
           if (!err) {
             self.connected = true;
             callback && callback(null)
@@ -158,10 +160,10 @@ Ambient.prototype._establishCommunication = function(retries, callback){
   });
 };
 
-Ambient.prototype.updateFirmware = function(callback) {
+Ambient.prototype.updateFirmware = function( fname, callback) {
   var self = this;
 
-  firmware.update('firmware/src/ambient-attx4.hex', function(){
+  firmware.update(fname, function(){
     setTimeout( function(){
       self.readFirmwareCRC(5, callback);
     }, 500);
@@ -182,7 +184,7 @@ Ambient.prototype.readFirmwareCRC = function(retries, callback) {
       if (retries > 0){
         self.readFirmwareCRC(retries, callback);
       } else {
-        self.updateFirmware(callback);
+        self.updateFirmware( FIRMWARE_FILE, callback);
       }
     }
   });
