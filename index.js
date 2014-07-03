@@ -27,8 +27,8 @@ var CRC_CMD = 7;
 
 // These should be updated with each firmware release
 var FIRMWARE_VERSION = 0x02;
-var CRC_HIGH = 0x2a;
-var CRC_LOW = 0xdb;
+var CRC_HIGH = 0xba;
+var CRC_LOW = 0x67;
 
 var STOP_CONF = 0x16;
 var PACKET_CONF = 0x55;
