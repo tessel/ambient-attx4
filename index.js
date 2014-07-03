@@ -488,6 +488,14 @@ function use (hardware, callback) {
   return new Ambient(hardware, callback);
 }
 
+function updateFirmware( fname, callback) {
+  var self = this;
+
+  firmware.update(fname, function(){
+    callback && callback();
+  });
+}
+
 exports.Ambient = Ambient;
-exports.firmware = firmware;
+exports.updateFirmware = updateFirmware;
 exports.use = use;
