@@ -487,4 +487,5 @@ function use (hardware, callback) {
 }
 
 exports.Ambient = Ambient;
+exports.firmware = firmware;
 exports.use = use;
