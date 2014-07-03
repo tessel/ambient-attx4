@@ -1,3 +1,11 @@
 node_modules
 *.log
+.DS_Store
 
+*.eep
+*.elf
+*.lss
+*.lst
+*.map
+*.o
+*.sym

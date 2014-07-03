@@ -9,6 +9,7 @@
 
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
+var firmware = require('./lib/firmware');
 
 // Max 10 (16 bit) data chunks
 var AMBIENT_BUF_SIZE = 10 * 2;
@@ -22,6 +23,12 @@ var SOUND_CMD = 3;
 var LIGHT_TRIGGER_CMD = 4;
 var SOUND_TRIGGER_CMD = 5;
 var FETCH_TRIGGER_CMD = 6;
+var CRC_CMD = 7;
+
+// These should be updated with each firmware release
+var FIRMWARE_VERSION = 0x02;
+var CRC_HIGH = 0xba;
+var CRC_LOW = 0x67;
 
 var STOP_CONF = 0x16;
 var PACKET_CONF = 0x55;
@@ -33,14 +40,14 @@ function Ambient(hardware, callback) {
   this.reset = hardware.digital[1];
 
   // Make sure you pull this high so we don't keep the module reset.
-  this.reset.output().high();
+  this.reset.output(true);
 
   // Set up our IRQ as a pull down
   this.irq = hardware.digital[2].input().rawWrite('low');
 
   // We're going to handle the chip select ourselves for more
   // sending flexibility
-  this.chipSelect = hardware.digital[0].output().high();
+  this.chipSelect = hardware.digital[0].output(true);
 
   // Global connected. We may use this in the future
   this.connected = false;
@@ -111,7 +118,6 @@ util.inherits(Ambient, EventEmitter);
 
 Ambient.prototype._establishCommunication = function(retries, callback){
   var self = this;
-  // Grab the firmware version
   self._getFirmwareVersion(function(err, version) {
     // If it didn't work
     if (err) {
@@ -132,15 +138,55 @@ Ambient.prototype._establishCommunication = function(retries, callback){
     }
     // If there was no error
     else {
-      // Connected successfully
-      self.connected = true;
-      // Call callback with version
-      if (callback) {
-        callback(null, version);
+      if (version < FIRMWARE_VERSION){
+        console.log('New module firmware available - updating...');
+        self.updateFirmware(function(err){
+          if (!err) {
+            self.connected = true;
+            callback && callback(null)
+          }
+        });
+      } else {
+        // Connected successfully
+        self.connected = true;
+        // Call callback with version
+        if (callback) {
+          callback(null);
+        }
       }
     }
   });
 };
+
+Ambient.prototype.updateFirmware = function(callback) {
+  var self = this;
+
+  firmware.update('firmware/src/ambient-attx4.hex', function(){
+    setTimeout( function(){
+      self.readFirmwareCRC(5, callback);
+    }, 500);
+  });
+}
+
+Ambient.prototype.readFirmwareCRC = function(retries, callback) {
+  var self = this;
+  self.spi.transfer(new Buffer([CRC_CMD, 0x00, 0x00, 0x00]), function gotCRC(err, res){
+    if (err) {
+      return callback(err);
+    } else if (self._validateResponse(res, [false, CRC_CMD, CRC_HIGH, CRC_LOW]) && res.length === 4) {
+      if (callback) {
+        callback(null);
+      }
+    } else {
+      retries--;
+      if (retries > 0){
+        self.readFirmwareCRC(retries, callback);
+      } else {
+        self.updateFirmware(callback);
+      }
+    }
+  });
+}
 
 Ambient.prototype._fetchTriggerValues = function() {
 
@@ -344,9 +390,9 @@ Ambient.prototype._setTrigger = function(triggerCmd, triggerVal, callback) {
 
       // Get the event title
       var event = (triggerCmd == LIGHT_TRIGGER_CMD ? "light-trigger-set" : "sound-trigger-set");
-      
+
       // Store the trigger value locally
-      if (triggerCmd == LIGHT_TRIGGER_CMD) 
+      if (triggerCmd == LIGHT_TRIGGER_CMD)
       {
         self.lightTriggerLevel = triggerVal
       }
