@@ -143,7 +143,7 @@ Ambient.prototype._establishCommunication = function(retries, callback){
     // If there was no error
     else {
       if (version < FIRMWARE_VERSION){
-        console.log('New module firmware available - updating...');
+        console.log('New Ambient module firmware available - updating...');
         self.updateFirmware( FIRMWARE_FILE, function(err){
           if (!err) {
             self.connected = true;
@@ -241,7 +241,7 @@ Ambient.prototype._getFirmwareVersion = function(callback) {
       }
     } else {
       if (callback) {
-        callback(new Error("Error retrieving firmware version"));
+        callback(new Error("Error retrieving Ambient firmware version"));
       }
     }
   });
@@ -274,7 +274,7 @@ Ambient.prototype._pollBuffers = function() {
   if (!self.connected) {
     self._establishCommunication(5, function(err) {
       if (err) {
-        self.emit('error', new Error("Can't communicate with module..."));
+        self.emit('error', new Error("Can't communicate with Ambient module..."));
       }
     });
   }
@@ -329,7 +329,7 @@ Ambient.prototype._readBuffer = function(command, readLen, callback) {
     }
     else {
       if (callback) {
-        callback(new Error("Invalid response from module"), data);
+        callback(new Error("Invalid response from Ambient module"), data);
       }
     }
   });
@@ -417,7 +417,7 @@ Ambient.prototype._setTrigger = function(triggerCmd, triggerVal, callback) {
     else
     {
       if (callback) {
-        callback(new Error("Invalid response from module for trigger set."));
+        callback(new Error("Invalid response from Ambient module for trigger set."));
       }
     }
   });
