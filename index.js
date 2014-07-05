@@ -38,6 +38,8 @@ var FIRMWARE_FILE = 'firmware/src/ambient-attx4.hex';
 
 function Ambient(hardware, callback) {
 
+  this.hardware = hardware;
+
   // Set the reset pin
   this.reset = hardware.digital[1];
 
@@ -163,7 +165,7 @@ Ambient.prototype._establishCommunication = function(retries, callback){
 Ambient.prototype.updateFirmware = function( fname, callback) {
   var self = this;
 
-  firmware.update(fname, function(){
+  firmware.update(self.hardware, fname, function(){
     setTimeout( function(){
       self.readFirmwareCRC(5, callback);
     }, 500);
@@ -488,10 +490,10 @@ function use (hardware, callback) {
   return new Ambient(hardware, callback);
 }
 
-function updateFirmware( fname, callback) {
+function updateFirmware( hardware, fname, callback) {
   var self = this;
 
-  firmware.update(fname, function(){
+  firmware.update( hardware, fname, function(){
     callback && callback();
   });
 }
