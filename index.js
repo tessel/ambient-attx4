@@ -26,9 +26,9 @@ var FETCH_TRIGGER_CMD = 6;
 var CRC_CMD = 7;
 
 // These should be updated with each firmware release
-var FIRMWARE_VERSION = 0x02;
-var CRC_HIGH = 0xba;
-var CRC_LOW = 0x67;
+var FIRMWARE_VERSION = 0x03;
+var CRC_HIGH = 0x58;
+var CRC_LOW = 0xE3;
 
 var STOP_CONF = 0x16;
 var PACKET_CONF = 0x55;
