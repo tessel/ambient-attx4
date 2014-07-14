@@ -246,7 +246,7 @@ ISR(INT0_vect){
   // Initialize variables
   volatile char length = 0;
   DataBuffer dataBuffer;
-  volatile uint8_t trigVal = 0;
+  volatile uint16_t trigVal = 0;
 
    // Confirm command
   spiX_put(command);
