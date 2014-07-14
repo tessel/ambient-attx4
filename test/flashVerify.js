@@ -7,12 +7,12 @@ var port = tessel.port['A'];
 var reset = port.digital[1];
 reset.output(true);
 
-console.log('1..20');
+console.log('1..35');
 
 var spi = new port.SPI({clockSpeed:50000, mode:2, chipSelect:port.digital[0].output(true)});
 
-var crc1 = 0xba;
-var crc2 = 0x67;
+var crc1 = 0x58;
+var crc2 = 0xE3;
 
 function showResult(test, fail, buf){
   if (test){
@@ -45,7 +45,7 @@ function testCrc(callback) {
 function testVersion(callback) {
   spi.transfer(new Buffer([0x01, 0x00, 0x00]), function(err, res){
     err && console.log('not ok - SPI error', err);
-    showResult(res[1] == 0x01 && (res[2] == 0x02 || res[2] == 0x01),
+    showResult(res[1] == 0x01 && (res[2] == 0x03 || res[2] == 0x02 || res[2] == 0x01),
       'not ok - Version returned incorrectly:', res);
     callback && callback();
   });
@@ -81,14 +81,26 @@ function testSoundBuffer(callback) {
   });
 }
 
-function testSetTrigger(callback) {
+function testSetLightTrigger(callback) {
   var dataBuffer = new Buffer(2);
-  dataBuffer.writeUInt16BE(512, 0);
-  var packet = new Buffer([0x04, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1), 0x00]);
+  dataBuffer.writeUInt16BE(0x0ff0, 0);
+  var packet = new Buffer([0x04, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1), 0x00, 0x00, 0x00]);
   spi.transfer(packet, function(err, res){
     err && console.log('not ok - SPI error', err);
     showResult((res[1] == packet[0] && res[2] == packet[1] && res[3] == packet[2]),
-      'not ok - trigger set failed', res);
+      'not ok - light trigger set failed', res);
+    callback && callback();
+  });
+}
+
+function testSetSoundTrigger(callback) {
+  var dataBuffer = new Buffer(2);
+  dataBuffer.writeUInt16BE(0x0ff0, 0);
+  var packet = new Buffer([0x05, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1), 0x00, 0x00, 0x00]);
+  spi.transfer(packet, function(err, res){
+    err && console.log('not ok - SPI error', err);
+    showResult((res[1] == packet[0] && res[2] == packet[1] && res[3] == packet[2]),
+      'not ok - sound trigger set failed', res);
     callback && callback();
   });
 }
@@ -96,7 +108,7 @@ function testSetTrigger(callback) {
 function testFetchTrigger(callback) {
   spi.transfer(new Buffer([0x06, 0x00, 0x00, 0x00, 0x00, 0x00]), function(err, res){
     err && console.log('not ok - SPI error', err);
-    showResult(false, 'not ok - trigger fetch failed', res);
+    showResult((res[0] == 0x55 && res[1] == 0x06 && res[2] == 0 && res[3] == 0 && res[4] == 0 && res[5] == 0), 'not ok - trigger fetch failed', res);
     callback && callback();
   });
 }
@@ -109,7 +121,15 @@ function test(){
       console.log('# Test getting light');
       repeat(5, testLightBuffer, function(){
         console.log('# Test getting sound');
-        repeat(5, testSoundBuffer);
+        repeat(5, testSoundBuffer, function(){
+          console.log('#Test setting triggers');
+          repeat(5, testSetLightTrigger, function(){
+            repeat(5, testSetSoundTrigger, function(){
+              console.log('#Test fetch trigger');
+              repeat(5, testFetchTrigger);
+            });
+          });
+        });
       });
     });
   });
@@ -117,5 +137,5 @@ function test(){
 
 test();
 
-// flash.update('firmware/src/ambient-attx4.hex', function(){
-//   setTimeout(test, 1000)});
+// flash.update( tessel.port['A'], 'firmware/src/ambient-attx4.hex', function(){
+  // setTimeout(test, 1000)});
