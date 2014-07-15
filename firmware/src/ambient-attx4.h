@@ -52,7 +52,7 @@
 #define ACK_CODE 0x33
 #define STOP_CMD 0x16
 
-#define FIRMWARE_VERSION 0x02
+#define FIRMWARE_VERSION 0x03
 
 // For CRC calculation
 #define POLY 0x8408
