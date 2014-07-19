@@ -16,6 +16,7 @@ ambient.on('ready', function () {
   setInterval(function () {
     // Get the 10 most recent data readings
     ambient.getLightBuffer(function(err, data) {
+      if (err) throw err;
       console.log('Light data, buffer method: ' + data);
     });
   }, 2000);

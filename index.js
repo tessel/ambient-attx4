@@ -328,8 +328,14 @@ Ambient.prototype._readBuffer = function(command, readLen, callback) {
       return data;
     }
     else {
+
+      var err = new Error("Invalid response from Ambient module");
+      
+      self.emit('error', err);
+
       if (callback) {
-        callback(new Error("Invalid response from Ambient module"), data);
+ 
+        callback(err);
       }
     }
   });
