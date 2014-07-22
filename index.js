@@ -57,7 +57,7 @@ function Ambient(hardware, callback) {
   this.connected = false;
 
   // Initialize SPI in SPI mode 2 (data on falling edge)
-  this.spi = new hardware.SPI({clockSpeed:50000, mode:2, chipSelect:this.chipSelect});
+  this.spi = new hardware.SPI({clockSpeed:50000, mode:2});
 
   this.lightTriggerLevel = null;
 
@@ -174,7 +174,7 @@ Ambient.prototype.updateFirmware = function( fname, callback) {
 
 Ambient.prototype.readFirmwareCRC = function(retries, callback) {
   var self = this;
-  self.spi.transfer(new Buffer([CRC_CMD, 0x00, 0x00, 0x00]), function gotCRC(err, res){
+  self._transfer(new Buffer([CRC_CMD, 0x00, 0x00, 0x00]), function gotCRC(err, res){
     if (err) {
       return callback(err);
     } else if (self._validateResponse(res, [false, CRC_CMD, CRC_HIGH, CRC_LOW]) && res.length === 4) {
@@ -200,7 +200,7 @@ Ambient.prototype._fetchTriggerValues = function() {
   var packet = new Buffer([FETCH_TRIGGER_CMD, 0x00, 0x00, 0x00, 0x00, 0x00]);
 
   // Transfer the command
-  self.spi.transfer(packet, function spiComplete(err, response) {
+  self._transfer(packet, function spiComplete(err, response) {
     if (self._validateResponse(response, [PACKET_CONF, FETCH_TRIGGER_CMD]))
     {
       // make a buffer with the cmd and cmd_echo spliced out
@@ -232,7 +232,7 @@ Ambient.prototype._fetchTriggerValues = function() {
 
 Ambient.prototype._getFirmwareVersion = function(callback) {
   var self = this;
-  self.spi.transfer(new Buffer([FIRMWARE_CMD, 0x00, 0x00]), function spiComplete(err, response) {
+  self._transfer(new Buffer([FIRMWARE_CMD, 0x00, 0x00]), function spiComplete(err, response) {
     if (err) {
       return callback(err, null);
     } else if (self._validateResponse(response, [false, FIRMWARE_CMD]) && response.length === 3) {
@@ -304,7 +304,7 @@ Ambient.prototype._readBuffer = function(command, readLen, callback) {
   var packet = Buffer.concat([header, bytes, stop]);
 
   // Synchronously transfer command to read
-  self.spi.transfer(packet, function spiComplete(err, data) {
+  self._transfer(packet, function spiComplete(err, data) {
 
     // If the response is valid
     if (self._validateResponse(data, [PACKET_CONF, command, readLen/2]) &&
@@ -387,7 +387,7 @@ Ambient.prototype._setTrigger = function(triggerCmd, triggerVal, callback) {
   var packet = new Buffer([triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1), 0x00]);
 
   // Send it over SPI
-  self.spi.transfer(packet, function spiComplete(err, data) {
+  self._transfer(packet, function spiComplete(err, data) {
     // If it's a valud response
     if (self._validateResponse(data, [PACKET_CONF, triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1)]))
     {
@@ -443,6 +443,15 @@ Ambient.prototype._validateResponse = function(values, expected, callback) {
 
   return res;
 };
+
+Ambient.prototype._transfer = function(packet, callback) {
+  var self = this;
+  this.chipSelect.output(false);
+  this.spi.transfer(packet, function spiComplete(err, data) {
+    self.chipSelect.output(true);
+    callback && callback(err, data);
+  });
+}
 
 // Clears trigger listener for light trigger
 Ambient.prototype.clearLightTrigger = function(callback) {
