@@ -28,10 +28,13 @@
     "./test": "false"
   },
   "devDependencies": {
-    "tinytap": "0.0.2"
+    "async": "^0.9.0",
+    "tinytap": "0.0.2",
+    "ttt": "^1.0.3"
   },
   "dependencies": {
     "avr-isp": "0.0.1",
-    "sync-queue": "0.0.1"
+    "sync-queue": "0.0.1",
+    "ttt": "^1.0.3"
   }
 }
