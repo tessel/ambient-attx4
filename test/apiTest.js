@@ -158,78 +158,76 @@ async.series([
   //   });
   // }),
   // 
-  // // sound trigger functions and events
-  // test('sound trigger tests', function (t) {
-  //   var triggerVal = 0.001; // Trigger value set very low to trip in ambient conditions
-  //   var timeout = 800; // "Reasonable time" to expect event emission
-  //   var tolerance = triggerVal; // Tolerance on returned value for set trigger
-  //   // Test setting of sound trigger
-  //   ambient.setSoundTrigger(triggerVal, function (err, val) {
-  //     if(err) {
-  //       t.ok(false, 'error caught: ' + err);
-  //     }
-  //     t.ok(val < triggerVal + tolerance && val > triggerVal - tolerance, 'sound trigger set to ' + val + ' when it should have been set to ' + triggerVal);
-  //     // Fail if light trigger not hit in a reasonable time
-  //     var failSoundTrigger = setTimeout(function () {
-  //       t.ok(false, 'sound trigger timed out- trigger improperly set or sound-trigger not emitting. Or things are very quiet.');
-  //     }, timeout);
-  //     // If sound trigger emitted
-  //     ambient.on('sound-trigger', function (datum) {
-  //       // Timeout cancelled
-  //       clearTimeout(failSoundTrigger);
-  //       // Track progress of tests happening asynchronously
-  //       var numEvents = 2;
-  //       var countEvents = 0;
-  //       // Check valid data
-  //       // It's a number...
-  //       t.equal(typeof datum, 'number', 'value ' + datum + ' should be a number');
-  //       // ...between 0 and 1...
-  //       t.ok(datum >= 0.0 && datum <= 1.0, 'data point ' + datum + ' is out of range');
-  //       // ...and it's higher than the trigger value
-  //       t.ok(datum > triggerVal, 'trigger tripped on an incorrect data value');
-  //       countEvents++;
-  //       if(countEvents == numEvents) {
-  //         t.end();
-  //       }
-  //       // Test clearing of sound trigger
-  //       ambient.clearSoundTrigger(function (err, val) {
-  //         if(err) {
-  //           t.ok(false, 'error caught: ' + err);
-  //         }
-  //         // Fail if we get any more sound triggers
-  //         ambient.on('sound-trigger', function (val) {
-  //           t.ok(false, 'sound-trigger event emitted even after trigger cleared- trigger improperly cleared or bad event emission');
-  //         });
-  //         var checkClearSoundTrigger = setTimeout(function () {
-  //           // Stop listening; it passed the clearSoundTrigger test
-  //           ambient.removeAllListeners('sound-trigger');
-  //           // Make sure it doesn't fire when the trigger is set way higher than ambient
-  //           ambient.setSoundTrigger(0.9, function (err, val) {
-  //             if(err) {
-  //               t.ok(false, 'error caught: ' + err);
-  //             }
-  //             // Fail if we get a sound trigger
-  //             ambient.on('sound-trigger', function (val) {
-  //               t.ok(false, 'sound-trigger event emitted with really high trigger value. Bad event emission or ridiculously loud test location');
-  //             });
-  //             var checkHighSoundTrigger = setTimeout(function () {
-  //               // Stop listening; it passed the super high sound trigger test
-  //               ambient.removeAllListeners('sound-trigger');
-  //               countEvents++;
-  //               if(countEvents == numEvents) {
-  //                 t.end();
-  //               }
-  //             }, timeout);
-  //           });
-  //         }, timeout);
-  //       });
-  //     });
-  //   });
-  // })
-  
-  // // tested to here
-  // 
-  // // Methods
+  // sound trigger functions and events
+  test('sound trigger tests', function (t) {
+    var triggerVal = 0.001; // Trigger value set very low to trip in ambient conditions
+    var timeout = 800; // "Reasonable time" to expect event emission
+    var tolerance = triggerVal; // Tolerance on returned value for set trigger
+    // Test setting of sound trigger
+    ambient.setSoundTrigger(triggerVal, function (err, val) {
+      if(err) {
+        t.ok(false, 'error caught: ' + err);
+      }
+      t.ok(val < triggerVal + tolerance && val > triggerVal - tolerance, 'sound trigger set to ' + val + ' when it should have been set to ' + triggerVal);
+      // Fail if light trigger not hit in a reasonable time
+      var failSoundTrigger = setTimeout(function () {
+        t.ok(false, 'sound trigger timed out- trigger improperly set or sound-trigger not emitting. Or things are very quiet.');
+      }, timeout);
+      // If sound trigger emitted
+      ambient.on('sound-trigger', function (datum) {
+        // Timeout cancelled
+        clearTimeout(failSoundTrigger);
+        // Track progress of tests happening asynchronously
+        var numEvents = 2;
+        var countEvents = 0;
+        // Check valid data
+        // It's a number...
+        t.equal(typeof datum, 'number', 'value ' + datum + ' should be a number');
+        // ...between 0 and 1...
+        t.ok(datum >= 0.0 && datum <= 1.0, 'data point ' + datum + ' is out of range');
+        // ...and it's higher than the trigger value
+        t.ok(datum > triggerVal, 'trigger tripped on an incorrect data value');
+        countEvents++;
+        if(countEvents == numEvents) {
+          t.end();
+        }
+        // Test clearing of sound trigger
+        ambient.clearSoundTrigger(function (err, val) {
+          if(err) {
+            t.ok(false, 'error caught: ' + err);
+          }
+          // Fail if we get any more sound triggers
+          ambient.on('sound-trigger', function (val) {
+            t.ok(false, 'sound-trigger event emitted even after trigger cleared- trigger improperly cleared or bad event emission');
+          });
+          var checkClearSoundTrigger = setTimeout(function () {
+            // Stop listening; it passed the clearSoundTrigger test
+            ambient.removeAllListeners('sound-trigger');
+            // Make sure it doesn't fire when the trigger is set way higher than ambient
+            ambient.setSoundTrigger(0.9, function (err, val) {
+              if(err) {
+                t.ok(false, 'error caught: ' + err);
+              }
+              // Fail if we get a sound trigger
+              ambient.on('sound-trigger', function (val) {
+                t.ok(false, 'sound-trigger event emitted with really high trigger value. Bad event emission or ridiculously loud test location');
+              });
+              var checkHighSoundTrigger = setTimeout(function () {
+                // Stop listening; it passed the super high sound trigger test
+                ambient.removeAllListeners('sound-trigger');
+                countEvents++;
+                if(countEvents == numEvents) {
+                  t.end();
+                }
+              }, timeout);
+            });
+          }, timeout);
+        });
+      });
+    });
+  }),
+
+  // Methods
   test('getLightBuffer', function (t) {
     ambient.getLightBuffer(function (err, data) {
       if(err) {
