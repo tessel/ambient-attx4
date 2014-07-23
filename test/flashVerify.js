@@ -9,19 +9,10 @@ reset.output(true);
 
 console.log('1..35');
 
-var spi = new port.SPI({clockSpeed:50000, mode:2});
-var chipSelect = port.digital[0].output(true)
+var spi = new port.SPI({clockSpeed:50000, mode:2, chipSelect:port.digital[0].output(true), chipSelectDelayUs:500});
 
 var crc1 = 0x58;
 var crc2 = 0xE3;
-
-function transfer(packet, callback) {
-  chipSelect.output(false);
-  spi.transfer(packet, function spiComplete(err, data) {
-    chipSelect.output(true);
-    callback && callback(err, data);
-  });
-}
 
 function showResult(test, fail, buf){
   if (test){
@@ -43,7 +34,7 @@ function repeat(n, test, callback) {
 }
 
 function testCrc(callback) {
-  transfer(new Buffer([0x07, 0x00, 0x00, 0x00]),function(err, res){
+  spi.transfer(new Buffer([0x07, 0x00, 0x00, 0x00]),function(err, res){
     err && console.log('not ok - SPI error', err);
     showResult( (res[1] == 0x07 && res[2] == crc1 && res[3] == crc2),
       'not ok - checksum not verified', res);
@@ -52,7 +43,7 @@ function testCrc(callback) {
 }
 
 function testVersion(callback) {
-  transfer(new Buffer([0x01, 0x00, 0x00]), function(err, res){
+  spi.transfer(new Buffer([0x01, 0x00, 0x00]), function(err, res){
     err && console.log('not ok - SPI error', err);
     showResult(res[1] == 0x01 && (res[2] == 0x03 || res[2] == 0x02 || res[2] == 0x01),
       'not ok - Version returned incorrectly:', res);
@@ -67,7 +58,7 @@ function testLightBuffer(callback) {
   var stop = new Buffer(1);
   stop.writeUInt8(0x16, 0);
 
-  transfer(Buffer.concat([header, fill, stop]), function(err, res){
+  spi.transfer(Buffer.concat([header, fill, stop]), function(err, res){
     err && console.log('not ok - SPI error', err);
     showResult((res[1] == 0x02 && res[2] == 0x0a && res[res.length-1] == 0x16),
       'not ok - light buffer incorrectly formatted:', res);
@@ -82,7 +73,7 @@ function testSoundBuffer(callback) {
   var stop = new Buffer(1);
   stop.writeUInt8(0x16, 0);
 
-  transfer(Buffer.concat([header, fill, stop]), function(err, res){
+  spi.transfer(Buffer.concat([header, fill, stop]), function(err, res){
     err && console.log('not ok - SPI error', err);
     showResult((res[1] == 0x03 && res[2] == 0x0a && res[res.length-1] == 0x16),
       'not ok - sound buffer incorrectly formatted:',res);
@@ -94,7 +85,7 @@ function testSetLightTrigger(callback) {
   var dataBuffer = new Buffer(2);
   dataBuffer.writeUInt16BE(0x0ff0, 0);
   var packet = new Buffer([0x04, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1), 0x00, 0x00, 0x00]);
-  transfer(packet, function(err, res){
+  spi.transfer(packet, function(err, res){
     err && console.log('not ok - SPI error', err);
     showResult((res[1] == packet[0] && res[2] == packet[1] && res[3] == packet[2]),
       'not ok - light trigger set failed', res);
@@ -106,7 +97,7 @@ function testSetSoundTrigger(callback) {
   var dataBuffer = new Buffer(2);
   dataBuffer.writeUInt16BE(0x0ff0, 0);
   var packet = new Buffer([0x05, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1), 0x00, 0x00, 0x00]);
-  transfer(packet, function(err, res){
+  spi.transfer(packet, function(err, res){
     err && console.log('not ok - SPI error', err);
     showResult((res[1] == packet[0] && res[2] == packet[1] && res[3] == packet[2]),
       'not ok - sound trigger set failed', res);
@@ -115,7 +106,7 @@ function testSetSoundTrigger(callback) {
 }
 
 function testFetchTrigger(callback) {
-  transfer(new Buffer([0x06, 0x00, 0x00, 0x00, 0x00, 0x00]), function(err, res){
+  spi.transfer(new Buffer([0x06, 0x00, 0x00, 0x00, 0x00, 0x00]), function(err, res){
     err && console.log('not ok - SPI error', err);
     showResult((res[0] == 0x55 && res[1] == 0x06 && res[2] == 0 && res[3] == 0 && res[4] == 0 && res[5] == 0), 'not ok - trigger fetch failed', res);
     callback && callback();
