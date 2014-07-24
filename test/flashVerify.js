@@ -108,7 +108,7 @@ function testSetSoundTrigger(callback) {
 function testFetchTrigger(callback) {
   spi.transfer(new Buffer([0x06, 0x00, 0x00, 0x00, 0x00, 0x00]), function(err, res){
     err && console.log('not ok - SPI error', err);
-    showResult((res[0] == 0x55 && res[1] == 0x06 && res[2] == 0 && res[3] == 0 && res[4] == 0 && res[5] == 0), 'not ok - trigger fetch failed', res);
+    showResult((res[0] == 0x55 && res[1] == 0x06 && res.length==6), 'not ok - trigger fetch failed', res);
     callback && callback();
   });
 }
