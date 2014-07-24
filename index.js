@@ -201,20 +201,16 @@ Ambient.prototype._fetchTriggerValues = function() {
 
   // Transfer the command
   self.spi.transfer(packet, function spiComplete(err, response) {
-    if (self._validateResponse(response, [PACKET_CONF, FETCH_TRIGGER_CMD]))
-    {
+    if (self._validateResponse(response, [PACKET_CONF, FETCH_TRIGGER_CMD])) {
       // make a buffer with the cmd and cmd_echo spliced out
       var data = new Buffer(response.slice(2, response.length));
       // Read values
       var lightTriggerValue = self._normalizeValue(data.readUInt16BE(0));
       var soundTriggerValue = self._normalizeValue(data.readUInt16BE(2));
 
-      if (lightTriggerValue && self.lightTriggerLevel)
-      {
+      if (lightTriggerValue && self.lightTriggerLevel) {
         self.emit('light-trigger', lightTriggerValue);
-      }
-      if (soundTriggerValue && self.soundTriggerLevel)
-      {
+      } if (soundTriggerValue && self.soundTriggerLevel) {
         self.emit('sound-trigger', soundTriggerValue);
       }
 
@@ -222,9 +218,7 @@ Ambient.prototype._fetchTriggerValues = function() {
         self.irqwatcher = self._fetchTriggerValues.bind(self);
         self.irq.once('high', self.irqwatcher);
       });
-    }
-    else
-    {
+    } else {
       console.warn("Warning... Invalid trigger values fetched...");
     }
   });
@@ -336,23 +330,30 @@ Ambient.prototype._readBuffer = function(command, readLen, callback) {
 };
 
 Ambient.prototype._setListening = function(enable, event) {
-
+  // Gets 'enable' (true or false) and the name of the event
+  
+  // Set the event to the appropriate t/f value
   if (event === "light") {
     this.lightPolling = enable;
   } else if (event === "sound") {
     this.soundPolling = enable;
   } else {
+    // If the event is not 'light' or 'sound', do nothing here
     return;
   }
 
-  // if the other buffer is not already polling
-  if (event === "light" && !this.soundPolling ||
-      event === "sound" && !this.lightPolling) {
-    if (enable) {
-      // start polling
+  // If we have a new listener
+  if (enable) {
+    // If the other buffer is not already polling
+    if (event === "light" && !this.soundPolling || event === "sound" && !this.lightPolling) {
+      // Start polling
       this.pollInterval = setInterval(this._pollBuffers.bind(this), this.pollingFrequency);
-    } else if (this.pollInterval !== null) {
-      // stop polling
+    }
+  } else {
+    // If we are removing a listener
+    // If sound and light events are both turned off
+    if (!this.soundPolling && !this.lightPolling) {
+      // Stop polling
       clearInterval(this.pollInterval);
       this.pollInterval = null;
       if(this.irqwatcher) {
