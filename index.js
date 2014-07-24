@@ -358,8 +358,6 @@ Ambient.prototype._setListening = function(enable, event) {
       this.pollInterval = null;
       if(this.irqwatcher) {
         this.irq.removeListener('high', this.irqwatcher);
-      } else {
-        this.emit('error', new Error('Trying to remove a listener, but the listener is already removed.'));
       }
     }
   }

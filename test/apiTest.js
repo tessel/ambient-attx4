@@ -7,6 +7,8 @@ var tessel = require('tessel');
 var ambientLib = require('../');
 var ambient;
 
+test.count(101);
+
 async.series([
   // Test connecting
   test('Connecting to ambient module, checking events', function (t) {
