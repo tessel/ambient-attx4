@@ -364,7 +364,9 @@ Ambient.prototype._setListening = function(enable, event) {
       // stop polling
       clearInterval(this.pollInterval);
       this.pollInterval = null;
-      this.irq.removeListener('high', this.irqwatcher);
+      if(this.irqwatcher) {
+        this.irq.removeListener('high', this.irqwatcher);
+      }
     }
   }
 };
