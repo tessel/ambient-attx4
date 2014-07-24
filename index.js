@@ -148,7 +148,7 @@ Ambient.prototype._establishCommunication = function(retries, callback){
         self.updateFirmware( FIRMWARE_FILE, function(err){
           if (!err) {
             self.connected = true;
-            callback && callback(null)
+            callback && callback(null);
           }
         });
       } else {
@@ -171,7 +171,7 @@ Ambient.prototype.updateFirmware = function( fname, callback) {
       self.readFirmwareCRC(5, callback);
     }, 500);
   });
-}
+};
 
 Ambient.prototype.readFirmwareCRC = function(retries, callback) {
   var self = this;
@@ -191,7 +191,7 @@ Ambient.prototype.readFirmwareCRC = function(retries, callback) {
       }
     }
   });
-}
+};
 
 Ambient.prototype._fetchTriggerValues = function() {
 
@@ -338,34 +338,27 @@ Ambient.prototype._readBuffer = function(command, readLen, callback) {
 
 Ambient.prototype._setListening = function(enable, event) {
 
-  if (event === "light")
-  {
+  if (event === "light") {
     this.lightPolling = enable;
-  }
-  else if (event === "sound")
-  {
+  } else if (event === "sound") {
     this.soundPolling = enable;
-  }
-  else
-  {
+  } else {
     return;
   }
 
   // if the other buffer is not already polling
   if (event === "light" && !this.soundPolling ||
-      event === "sound" && !this.lightPolling)
-  {
-    if (enable)
-    {
+      event === "sound" && !this.lightPolling) {
+    if (enable) {
       // start polling
       this.pollInterval = setInterval(this._pollBuffers.bind(this), this.pollingFrequency);
-    }
-    else if (this.pollInterval != null)
-    {
+    } else if (this.pollInterval !== null) {
       // stop polling
       clearInterval(this.pollInterval);
       this.pollInterval = null;
-      this.irq.removeListener('high', this.irqwatcher);
+      if(this.irqwatcher) {
+        this.irq.removeListener('high', this.irqwatcher);
+      }
     }
   }
 };
@@ -399,7 +392,7 @@ Ambient.prototype._setTrigger = function(triggerCmd, triggerVal, callback) {
       // Store the trigger value locally
       if (triggerCmd == LIGHT_TRIGGER_CMD)
       {
-        self.lightTriggerLevel = triggerVal
+        self.lightTriggerLevel = triggerVal;
       }
       else
       {
@@ -407,10 +400,10 @@ Ambient.prototype._setTrigger = function(triggerCmd, triggerVal, callback) {
       }
 
       // Emit the event
-      self.emit(event, triggerVal);
+      self.emit(event, triggerVal / MAX_AMBIENT_VALUE);
       // Return data
       if (callback) {
-        callback(null, triggerVal);
+        callback(null, triggerVal / MAX_AMBIENT_VALUE);
       }
       // Return the value
       return triggerVal;
@@ -488,10 +481,13 @@ Ambient.prototype.setSoundTrigger = function(triggerVal, callback) {
 };
 
 function use (hardware, callback) {
+  if(!hardware) {
+    console.log(new Error('Improperly specified Tessel port.'));
+  }
   return new Ambient(hardware, callback);
 }
 
-function updateFirmware( hardware, fname, callback) {
+function updateFirmware(hardware, fname, callback) {
   var self = this;
 
   firmware.update( hardware, fname, function(){
