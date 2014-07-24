@@ -1,4 +1,4 @@
-var test = require('ttt');
+var test = require('tinytap');
 
 var async = require('async');
 
