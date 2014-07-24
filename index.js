@@ -338,35 +338,28 @@ Ambient.prototype._readBuffer = function(command, readLen, callback) {
 
 Ambient.prototype._setListening = function(enable, event) {
 
-  if (event === "light")
-  {
+  if (event === "light") {
     this.lightPolling = enable;
-  }
-  else if (event === "sound")
-  {
+  } else if (event === "sound") {
     this.soundPolling = enable;
-  }
-  else
-  {
+  } else {
     return;
   }
 
   // if the other buffer is not already polling
   if (event === "light" && !this.soundPolling ||
-      event === "sound" && !this.lightPolling)
-  {
-    if (enable)
-    {
+      event === "sound" && !this.lightPolling) {
+    if (enable) {
       // start polling
       this.pollInterval = setInterval(this._pollBuffers.bind(this), this.pollingFrequency);
-    }
-    else if (this.pollInterval !== null)
-    {
+    } else if (this.pollInterval !== null) {
       // stop polling
       clearInterval(this.pollInterval);
       this.pollInterval = null;
       if(this.irqwatcher) {
         this.irq.removeListener('high', this.irqwatcher);
+      } else {
+        this.emit('error', new Error('Trying to remove a listener, but the listener is already removed.'))
       }
     }
   }
