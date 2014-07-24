@@ -9,7 +9,7 @@ reset.output(true);
 
 console.log('1..35');
 
-var spi = new port.SPI({clockSpeed:50000, mode:2, chipSelect:port.digital[0].output(true)});
+var spi = new port.SPI({clockSpeed:50000, mode:2, chipSelect:port.digital[0].output(true), chipSelectDelayUs:500});
 
 var crc1 = 0x58;
 var crc2 = 0xE3;
@@ -108,7 +108,7 @@ function testSetSoundTrigger(callback) {
 function testFetchTrigger(callback) {
   spi.transfer(new Buffer([0x06, 0x00, 0x00, 0x00, 0x00, 0x00]), function(err, res){
     err && console.log('not ok - SPI error', err);
-    showResult((res[0] == 0x55 && res[1] == 0x06 && res[2] == 0 && res[3] == 0 && res[4] == 0 && res[5] == 0), 'not ok - trigger fetch failed', res);
+    showResult((res[0] == 0x55 && res[1] == 0x06 && res.length==6), 'not ok - trigger fetch failed', res);
     callback && callback();
   });
 }

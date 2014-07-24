@@ -57,7 +57,8 @@ function Ambient(hardware, callback) {
   this.connected = false;
 
   // Initialize SPI in SPI mode 2 (data on falling edge)
-  this.spi = new hardware.SPI({clockSpeed:50000, mode:2, chipSelect:this.chipSelect});
+  // Chip Select delay of 500us to accommodate SPI setup time of 50-300us
+  this.spi = new hardware.SPI({clockSpeed:50000, mode:2, chipSelect:this.chipSelect, chipSelectDelayUs:500});
 
   this.lightTriggerLevel = null;
 
