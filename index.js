@@ -358,7 +358,7 @@ Ambient.prototype._setListening = function(enable, event) {
       if(this.irqwatcher) {
         this.irq.removeListener('high', this.irqwatcher);
       } else {
-        this.emit('error', new Error('Trying to remove a listener, but the listener is already removed.'))
+        this.emit('error', new Error('Trying to remove a listener, but the listener is already removed.'));
       }
     }
   }
@@ -482,10 +482,13 @@ Ambient.prototype.setSoundTrigger = function(triggerVal, callback) {
 };
 
 function use (hardware, callback) {
+  if(!hardware) {
+    console.log(new Error('Improperly specified Tessel port.'));
+  }
   return new Ambient(hardware, callback);
 }
 
-function updateFirmware( hardware, fname, callback) {
+function updateFirmware(hardware, fname, callback) {
   var self = this;
 
   firmware.update( hardware, fname, function(){
