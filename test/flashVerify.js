@@ -2,7 +2,7 @@ var tessel = require('tessel');
 
 var flash = require('../lib/firmware');
 
-var port = tessel.port['A'];
+var port = tessel.port[process.argv[2] || 'A'];
 
 var reset = port.digital[1];
 reset.output(true);
