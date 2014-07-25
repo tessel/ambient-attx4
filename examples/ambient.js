@@ -15,8 +15,10 @@ var ambient = ambientlib.use(tessel.port['A']);
 ambient.on('ready', function () {
  // Get points of light and sound data.
   setInterval( function () {
-    ambient.getLightLevel( function(err, ldata) {
-      ambient.getSoundLevel( function(err, sdata) {
+    ambient.getLightLevel( function(lightErr, ldata) {
+      if (lightErr) throw lightErr;
+      ambient.getSoundLevel( function(soundErr, sdata) {
+        if (soundErr) throw soundErr;
         console.log("Light level:", ldata.toFixed(8), " ", "Sound Level:", sdata.toFixed(8));
     });
   })}, 500); // The readings will happen every .5 seconds unless the trigger is hit
