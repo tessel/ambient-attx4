@@ -1,4 +1,5 @@
 // Copyright 2014 Technical Machine, Inc. See the COPYRIGHT
+// Copyright 2014 Technical Machine, Inc. See the COPYRIGHT
 // file at the top-level directory of this distribution.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
@@ -9,8 +10,8 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include <avr/pgmspace.h>
-#include "spi_via_usi_driver.c"
+#include "src/deps/avr-usi-spi/spi_via_usi_driver.c" // Supplied SPI Driver
+#include "src/deps/attiny-firmware-common/include/common.h" // Common libs between attiny repos
 
 #ifndef cbi
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
@@ -46,6 +47,7 @@
 #define SOUND_TRIGGER_CMD 5
 #define TRIGGER_FETCH_CMD 6
 #define CRC_CMD 7
+#define MODULE_ID_CMD 8
 
 // Response constants
 #define ALIVE_CODE 0x55
