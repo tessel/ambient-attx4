@@ -41,7 +41,7 @@ volatile DataBuffer bufferForCommand(uint8_t command);
 extern void _exit();
 
 int main(void) {
-  checksum = calculate_checksum( (unsigned short) _exit << 1 );
+  checksum = 0x58e4;//calculate_checksum( (unsigned short) _exit << 1 );
 
   setup();
 
@@ -270,16 +270,9 @@ ISR(INT0_vect){
     // If they want firmware version
     case FIRMWARE_CMD:
       // Send the firmware version
-      spiX_put(FIRMWARE_VERSION);
+      spiX_put(16);
       spiX_wait();
       break;
-    // If they want firmware version
-    case MODULE_ID_CMD:
-      // Send the firmware version
-      spiX_put(read_module_id()); 
-      spiX_wait();
-      break;
-      
     // Routine for reading buffers
     case LIGHT_CMD:
     case SOUND_CMD:
@@ -401,29 +394,3 @@ ISR(INT0_vect){
   sbi(TIMSK1, OCIE1A);
 }
 
-unsigned short crc16( unsigned short length)
-{
-      unsigned char i;
-      unsigned int data;
-      unsigned int crc = 0xffff;
-      char *data_p = 0x0000;
-
-      if (length == 0)
-            return (~crc);
-      do
-      {
-            for (i=0, data= pgm_read_byte(data_p++);
-                 i < 8;
-                 i++, data >>= 1)
-            {
-                  if ((crc & 0x0001) ^ (data & 0x0001))
-                        crc = (crc >> 1) ^ POLY;
-                  else  crc >>= 1;
-            }
-      } while (--length);
-      crc = ~crc;
-      data = crc;
-      crc = (crc << 8) | (data >> 8 & 0xff);
-
-      return (crc);
-}

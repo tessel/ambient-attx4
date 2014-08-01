@@ -12,7 +12,8 @@ var EventEmitter = require('events').EventEmitter;
 var Attiny = require('attiny-common');
 var MODULE_ID = 0x08;
 var TINY44_SIGNATURE = 0x9207;
-var FIRMWARE_FILE = 'firmware/src/ambient-attx4.hex';
+// var FIRMWARE_FILE = __dirname + '/firmware/src/ambient-old.hex';
+var FIRMWARE_FILE = __dirname + '/firmware/src/ambient-attx4.hex';
 
 // Max 10 (16 bit) data chunks
 var AMBIENT_BUF_SIZE = 10 * 2;
@@ -26,10 +27,11 @@ var SOUND_TRIGGER_CMD = 5;
 var FETCH_TRIGGER_CMD = 6;
 
 // These should be updated with each firmware release
-var FIRMWARE_VERSION = 0x02;
+var FIRMWARE_VERSION = 0x03;
 var CRC = 0x58E3;
 
 function Ambient(hardware, callback) {
+
 
   // Create a new instance of an attiny
   this.attiny = new Attiny(hardware); 
@@ -58,6 +60,7 @@ function Ambient(hardware, callback) {
     crc : CRC,
   }
 
+  console.log('initializing...');
   // Make sure we can communicate with the module
   self.attiny.initialize(firmwareOptions, function(err) {
     if (err) {
@@ -72,6 +75,9 @@ function Ambient(hardware, callback) {
       return;
     } 
     else {
+      self.attiny.getCRC(function(err, crc) {
+        console.log('got crc', err, crc);  
+      });
       self.connected = true;
 
       // // Start listening for IRQ interrupts

@@ -10,6 +10,7 @@ specified light or sound level trigger is met.
 var tessel = require('tessel');
 var ambientlib = require('../'); // Replace '../' with 'ambient-attx4' in your own code
 
+console.log('should be initializing..');
 var ambient = ambientlib.use(tessel.port['A']);
 
 ambient.on('ready', function () {
