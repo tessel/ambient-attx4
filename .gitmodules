@@ -7,3 +7,6 @@
 [submodule "firmware/src/deps/attiny-firmware-common"]
 	path = firmware/src/deps/attiny-firmware-common
 	url = git@github.com:tessel/attiny-firmware-common.git
+[submodule "firmware/src/deps/--force"]
+	path = firmware/src/deps/--force
+	url = git@github.com:tessel/attiny-firmware-common.git

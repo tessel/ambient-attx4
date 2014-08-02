@@ -13,7 +13,6 @@ async.series([
   // Test connecting
   test('Connecting to ambient module, checking events', function (t) {
     ambient = ambientLib.use(tessel.port[portname], function (err, ambient) {
-      console.log('got the callback');
       t.ok(ambient, 'The ambient module object was not returned');
       t.equal(err, undefined, 'There was an error connecting');
       // Test events
