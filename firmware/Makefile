@@ -40,7 +40,7 @@
 
 
 # MCU name
-MCU = attiny24
+MCU = attiny44
 
 
 # Processor frequency.
@@ -56,11 +56,11 @@ FORMAT = ihex
 
 
 # Target file name (without extension).
-TARGET = ambient-attx4
+TARGET = src/ambient-attx4
 
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = $(TARGET).c
+SRC = $(TARGET).c src/deps/attiny-firmware-common/src/common.c
 
 
 # List Assembler source files here.

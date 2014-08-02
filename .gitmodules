@@ -1,0 +1,12 @@
+[submodule "firmware/src/deps/attiny-common"]
+	path = firmware/src/deps/attiny-common
+	url = git@github.com:tessel/attiny-common.git
+[submodule "firmware/src/deps/avr-usi-spi"]
+	path = firmware/src/deps/avr-usi-spi
+	url = git@github.com:technicalmachine/avr-usi-spi.git
+[submodule "firmware/src/deps/attiny-firmware-common"]
+	path = firmware/src/deps/attiny-firmware-common
+	url = git@github.com:tessel/attiny-firmware-common.git
+[submodule "firmware/src/deps/--force"]
+	path = firmware/src/deps/--force
+	url = git@github.com:tessel/attiny-firmware-common.git

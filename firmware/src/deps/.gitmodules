@@ -1,0 +1,6 @@
+[submodule "avr-usi-spi"]
+	path = avr-usi-spi
+	url = git@github.com:technicalmachine/avr-usi-spi.git
+[submodule "attiny-firmware-common"]
+	path = attiny-firmware-common
+	url = git@github.com:tessel/attiny-firmware-common.git

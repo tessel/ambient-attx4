@@ -9,8 +9,8 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include <avr/pgmspace.h>
-#include "spi_via_usi_driver.c"
+#include "src/deps/avr-usi-spi/spi_via_usi_driver.c"
+#include "src/deps/attiny-firmware-common/include/common.h"
 
 #ifndef cbi
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
@@ -46,16 +46,12 @@
 #define SOUND_TRIGGER_CMD 5
 #define TRIGGER_FETCH_CMD 6
 #define CRC_CMD 7
+#define MODULE_ID_CMD 8
 
 // Response constants
 #define ALIVE_CODE 0x55
 #define ACK_CODE 0x33
 #define STOP_CMD 0x16
-
-#define FIRMWARE_VERSION 0x03
-
-// For CRC calculation
-#define POLY 0x8408
 
 // Size of buffers (be careful about making this bigger, could run out of bss)
 #define BUF_SIZE 10
@@ -66,5 +62,3 @@ typedef struct
   volatile uint16_t buffer[BUF_SIZE];
   volatile uint8_t bufferLocation;
 } DataBuffer;
-
-unsigned short crc16( unsigned short length);

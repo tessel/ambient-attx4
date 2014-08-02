@@ -9,56 +9,39 @@
 
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
-var firmware = require('./lib/firmware');
+var Attiny = require('attiny-common');
+var MODULE_ID = 0x08;
+var TINY44_SIGNATURE = 0x9207;
+var FIRMWARE_FILE = __dirname + '/firmware/src/ambient-attx4.hex';
 
 // Max 10 (16 bit) data chunks
 var AMBIENT_BUF_SIZE = 10 * 2;
 var AMBIENT_SINGLE_BYTE = 1 * 2;
 var MAX_AMBIENT_VALUE = 1024;
 
-var ACK_CMD = 0;
-var FIRMWARE_CMD = 1;
+// Confirmation Signals
+var PACKET_CONF = 0x55;
+var ACK_CONF = 0x33;
+var FIN_CONF = 0x16;
+
 var LIGHT_CMD = 2;
 var SOUND_CMD = 3;
 var LIGHT_TRIGGER_CMD = 4;
 var SOUND_TRIGGER_CMD = 5;
 var FETCH_TRIGGER_CMD = 6;
-var CRC_CMD = 7;
 
 // These should be updated with each firmware release
 var FIRMWARE_VERSION = 0x03;
-var CRC_HIGH = 0x58;
-var CRC_LOW = 0xE3;
-
-var STOP_CONF = 0x16;
-var PACKET_CONF = 0x55;
-var ACK_CONF = 0x33;
-
-var FIRMWARE_FILE = 'firmware/src/ambient-attx4.hex';
+var CRC = 0x1eb5;
 
 function Ambient(hardware, callback) {
 
-  this.hardware = hardware;
 
-  // Set the reset pin
-  this.reset = hardware.digital[1];
-
-  // Make sure you pull this high so we don't keep the module reset.
-  this.reset.output(true);
-
-  // Set up our IRQ as a pull down
-  this.irq = hardware.digital[2].input().rawWrite('low');
-
-  // We're going to handle the chip select ourselves for more
-  // sending flexibility
-  this.chipSelect = hardware.digital[0].output(true);
+  // Create a new instance of an attiny
+  this.attiny = new Attiny(hardware); 
 
   // Global connected. We may use this in the future
   this.connected = false;
-
-  // Initialize SPI in SPI mode 2 (data on falling edge)
-  // Chip Select delay of 500us to accommodate SPI setup time of 50-300us
-  this.spi = new hardware.SPI({clockSpeed:50000, mode:2, chipSelect:this.chipSelect, chipSelectDelayUs:500});
 
   this.lightTriggerLevel = null;
 
@@ -72,8 +55,16 @@ function Ambient(hardware, callback) {
 
   var self = this;
 
+  // Store our firmware checking and updating options
+  var firmwareOptions = {
+    firmwareFile : FIRMWARE_FILE,
+    firmwareVersion : FIRMWARE_VERSION,
+    moduleID : MODULE_ID,
+    signature : TINY44_SIGNATURE,
+    crc : CRC,
+  }
   // Make sure we can communicate with the module
-  self._establishCommunication(5, function(err, version) {
+  self.attiny.initialize(firmwareOptions, function(err) {
     if (err) {
       // Emit the error
       self.emit('error', err);
@@ -83,12 +74,11 @@ function Ambient(hardware, callback) {
         callback(err);
       }
 
-      return null;
-    } else {
-      self.connected = true;
+      return;
+    } 
+    else {
 
-      // Start listening for IRQ interrupts
-      self.irq.once('high', self._fetchTriggerValues.bind(self));
+      self.connected = true;
 
       // If someone starts listening
       self.on('newListener', function(event) {
@@ -111,87 +101,24 @@ function Ambient(hardware, callback) {
         }
       });
 
-      // Emit the ready event
-      callback && callback(null, self);
-      self.emit('ready');
+      setImmediate(function () {
+        // Emit a ready event
+        self.emit('ready');
+        // Start listening for IRQ interrupts
+        self.irqwatcher = self._fetchTriggerValues.bind(self);
+        self.attiny.setIRQCallback(self.irqwatcher);
+
+      });
+
+      if (callback) {
+        callback(null, self); 
+      }
     }
   });
 }
 
 // We want the ability to emit events
 util.inherits(Ambient, EventEmitter);
-
-Ambient.prototype._establishCommunication = function(retries, callback){
-  var self = this;
-  self._getFirmwareVersion(function(err, version) {
-    // If it didn't work
-    if (err) {
-      // Subtract number of retries
-      retries--;
-      // If there are no more retries possible
-      if (!retries) {
-        // Throw an error and return
-        if (callback) {
-          callback(err);
-        }
-        return;
-      }
-      // Else call recursively
-      else {
-        self._establishCommunication(retries, callback);
-      }
-    }
-    // If there was no error
-    else {
-      if (version < FIRMWARE_VERSION){
-        console.log('New Ambient module firmware available - updating...');
-        self.updateFirmware( FIRMWARE_FILE, function(err){
-          if (!err) {
-            self.connected = true;
-            callback && callback(null);
-          }
-        });
-      } else {
-        // Connected successfully
-        self.connected = true;
-        // Call callback with version
-        if (callback) {
-          callback(null);
-        }
-      }
-    }
-  });
-};
-
-Ambient.prototype.updateFirmware = function( fname, callback) {
-  var self = this;
-
-  firmware.update(self.hardware, fname, function(){
-    setTimeout( function(){
-      self.readFirmwareCRC(5, callback);
-    }, 500);
-  });
-};
-
-Ambient.prototype.readFirmwareCRC = function(retries, callback) {
-  var self = this;
-  self.spi.transfer(new Buffer([CRC_CMD, 0x00, 0x00, 0x00]), function gotCRC(err, res){
-    if (err) {
-      return callback(err);
-    } else if (self._validateResponse(res, [false, CRC_CMD, CRC_HIGH, CRC_LOW]) && res.length === 4) {
-      if (callback) {
-        callback(null);
-      }
-    } else {
-      retries--;
-      if (retries > 0){
-        self.readFirmwareCRC(retries, callback);
-      } else {
-        self.updateFirmware( FIRMWARE_FILE, callback);
-      }
-    }
-  });
-};
 
 Ambient.prototype._fetchTriggerValues = function() {
 
@@ -200,9 +127,9 @@ Ambient.prototype._fetchTriggerValues = function() {
   // cmd, cmd_echo, light_val (16 bits), sound_val (16 bits)
   var packet = new Buffer([FETCH_TRIGGER_CMD, 0x00, 0x00, 0x00, 0x00, 0x00]);
 
-  // Transfer the command
-  self.spi.transfer(packet, function spiComplete(err, response) {
-    if (self._validateResponse(response, [PACKET_CONF, FETCH_TRIGGER_CMD]))
+  // transceive the command
+  self.attiny.transceive(packet, function spiComplete(err, response) {
+    if (self.attiny._validateResponse(response, [PACKET_CONF, FETCH_TRIGGER_CMD]))
     {
       // make a buffer with the cmd and cmd_echo spliced out
       var data = new Buffer(response.slice(2, response.length));
@@ -221,7 +148,7 @@ Ambient.prototype._fetchTriggerValues = function() {
 
       setImmediate(function() {
         self.irqwatcher = self._fetchTriggerValues.bind(self);
-        self.irq.once('high', self.irqwatcher);
+        self.attiny.setIRQCallback(self.irqwatcher);
       });
     }
     else
@@ -231,22 +158,6 @@ Ambient.prototype._fetchTriggerValues = function() {
   });
 };
 
-Ambient.prototype._getFirmwareVersion = function(callback) {
-  var self = this;
-  self.spi.transfer(new Buffer([FIRMWARE_CMD, 0x00, 0x00]), function spiComplete(err, response) {
-    if (err) {
-      return callback(err, null);
-    } else if (self._validateResponse(response, [false, FIRMWARE_CMD]) && response.length === 3) {
-      if (callback) {
-        callback(null, response[2]);
-      }
-    } else {
-      if (callback) {
-        callback(new Error("Error retrieving Ambient firmware version"));
-      }
-    }
-  });
-};
 
 Ambient.prototype._getSingleDatum = function(command, callback) {
 
@@ -300,16 +211,15 @@ Ambient.prototype._readBuffer = function(command, readLen, callback) {
   bytes.fill(0);
 
   var stop = new Buffer(1);
-  stop.writeUInt8(STOP_CONF, 0);
+  stop.writeUInt8(FIN_CONF, 0);
 
   var packet = Buffer.concat([header, bytes, stop]);
 
-  // Synchronously transfer command to read
-  self.spi.transfer(packet, function spiComplete(err, data) {
-
+  // Synchronously transceive command to read
+  self.attiny.transceive(packet, function spiComplete(err, data) {
     // If the response is valid
-    if (self._validateResponse(data, [PACKET_CONF, command, readLen/2]) &&
-      data[data.length-1] === STOP_CONF) {
+    if (self.attiny._validateResponse(data, [PACKET_CONF, command, readLen/2]) &&
+      data[data.length-1] === FIN_CONF) {
 
       data = self._normalizeBuffer(data.slice(header.length, data.length-1));
 
@@ -329,8 +239,11 @@ Ambient.prototype._readBuffer = function(command, readLen, callback) {
       return data;
     }
     else {
+
+      var err = new Error("Invalid response from Ambient module");
+
       if (callback) {
-        callback(new Error("Invalid response from Ambient module"), data);
+        callback(err);
       }
     }
   });
@@ -357,7 +270,7 @@ Ambient.prototype._setListening = function(enable, event) {
       clearInterval(this.pollInterval);
       this.pollInterval = null;
       if(this.irqwatcher) {
-        this.irq.removeListener('high', this.irqwatcher);
+        this.attiny.irq.removeListener('high', this.irqwatcher);
       }
     }
   }
@@ -381,9 +294,9 @@ Ambient.prototype._setTrigger = function(triggerCmd, triggerVal, callback) {
   var packet = new Buffer([triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1), 0x00]);
 
   // Send it over SPI
-  self.spi.transfer(packet, function spiComplete(err, data) {
+  self.attiny.transceive(packet, function spiComplete(err, data) {
     // If it's a valud response
-    if (self._validateResponse(data, [PACKET_CONF, triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1)]))
+    if (self.attiny._validateResponse(data, [PACKET_CONF, triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1)]))
     {
 
       // Get the event title
@@ -415,27 +328,6 @@ Ambient.prototype._setTrigger = function(triggerCmd, triggerVal, callback) {
       }
     }
   });
-};
-
-Ambient.prototype._validateResponse = function(values, expected, callback) {
-
-  var res = true;
-
-  for (var index = 0; index < expected.length; index++) {
-
-    if (expected[index] === false) continue;
-
-    if (expected[index] != values[index]) {
-      res = false;
-      break;
-    }
-  }
-
-  if (callback) {
-    callback(res);
-  }
-
-  return res;
 };
 
 // Clears trigger listener for light trigger
@@ -482,19 +374,10 @@ Ambient.prototype.setSoundTrigger = function(triggerVal, callback) {
 
 function use (hardware, callback) {
   if(!hardware) {
-    console.log(new Error('Improperly specified Tessel port.'));
+    console.warn(new Error('Improperly specified Tessel port.'));
   }
   return new Ambient(hardware, callback);
 }
 
-function updateFirmware(hardware, fname, callback) {
-  var self = this;
-
-  firmware.update( hardware, fname, function(){
-    callback && callback();
-  });
-}
-
 exports.Ambient = Ambient;
-exports.updateFirmware = updateFirmware;
 exports.use = use;

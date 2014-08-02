@@ -1,7 +1,5 @@
 var tessel = require('tessel');
 
-var flash = require('../lib/firmware');
-
 var port = tessel.port[process.argv[2] || 'A'];
 
 var reset = port.digital[1];
@@ -11,8 +9,8 @@ console.log('1..35');
 
 var spi = new port.SPI({clockSpeed:50000, mode:2, chipSelect:port.digital[0].output(true), chipSelectDelayUs:500});
 
-var crc1 = 0x58;
-var crc2 = 0xE3;
+var crc1 = 0x1e;
+var crc2 = 0xb5;
 
 function showResult(test, fail, buf){
   if (test){
@@ -136,6 +134,3 @@ function test(){
 }
 
 test();
-
-// flash.update( tessel.port['A'], 'firmware/src/ambient-attx4.hex', function(){
-  // setTimeout(test, 1000)});
