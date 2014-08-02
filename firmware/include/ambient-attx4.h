@@ -1,5 +1,4 @@
 // Copyright 2014 Technical Machine, Inc. See the COPYRIGHT
-// Copyright 2014 Technical Machine, Inc. See the COPYRIGHT
 // file at the top-level directory of this distribution.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
@@ -10,11 +9,8 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include "src/deps/avr-usi-spi/spi_via_usi_driver.c" // Supplied SPI Driver
-#include "src/deps/attiny-firmware-common/include/common.h" // Common libs between attiny repos
-
-// Temp
-#define FIRMWARE_VERSION 10
+#include "src/deps/avr-usi-spi/spi_via_usi_driver.c"
+#include "src/deps/attiny-firmware-common/include/common.h"
 
 #ifndef cbi
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
@@ -57,7 +53,6 @@
 #define ACK_CODE 0x33
 #define STOP_CMD 0x16
 
-
 // Size of buffers (be careful about making this bigger, could run out of bss)
 #define BUF_SIZE 10
 
@@ -67,5 +62,3 @@ typedef struct
   volatile uint16_t buffer[BUF_SIZE];
   volatile uint8_t bufferLocation;
 } DataBuffer;
-
-unsigned short crc16( unsigned short length);

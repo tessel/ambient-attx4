@@ -12,13 +12,17 @@ var EventEmitter = require('events').EventEmitter;
 var Attiny = require('attiny-common');
 var MODULE_ID = 0x08;
 var TINY44_SIGNATURE = 0x9207;
-// var FIRMWARE_FILE = __dirname + '/firmware/src/ambient-old.hex';
 var FIRMWARE_FILE = __dirname + '/firmware/src/ambient-attx4.hex';
 
 // Max 10 (16 bit) data chunks
 var AMBIENT_BUF_SIZE = 10 * 2;
 var AMBIENT_SINGLE_BYTE = 1 * 2;
 var MAX_AMBIENT_VALUE = 1024;
+
+// Confirmation Signals
+var PACKET_CONF = 0x55;
+var ACK_CONF = 0x33;
+var FIN_CONF = 0x16;
 
 var LIGHT_CMD = 2;
 var SOUND_CMD = 3;
@@ -28,7 +32,7 @@ var FETCH_TRIGGER_CMD = 6;
 
 // These should be updated with each firmware release
 var FIRMWARE_VERSION = 0x03;
-var CRC = 0x58E3;
+var CRC = 0x1eb5;
 
 function Ambient(hardware, callback) {
 
@@ -59,8 +63,6 @@ function Ambient(hardware, callback) {
     signature : TINY44_SIGNATURE,
     crc : CRC,
   }
-
-  console.log('initializing...');
   // Make sure we can communicate with the module
   self.attiny.initialize(firmwareOptions, function(err) {
     if (err) {
@@ -75,46 +77,48 @@ function Ambient(hardware, callback) {
       return;
     } 
     else {
-      self.attiny.getCRC(function(err, crc) {
-        console.log('got crc', err, crc);  
-      });
+
       self.connected = true;
 
-      // // Start listening for IRQ interrupts
-      // self.irq.once('high', self._fetchTriggerValues.bind(self));
+      // If someone starts listening
+      self.on('newListener', function(event) {
+        // and there weren't listeners before
+        if (!self.listeners(event).length)
+        {
+          // start retrieving data for this type of buffer
+          self._setListening(true, event);
+        }
+      });
 
-      // // If someone starts listening
-      // self.on('newListener', function(event) {
-      //   // and there weren't listeners before
-      //   if (!self.listeners(event).length)
-      //   {
-      //     // start retrieving data for this type of buffer
-      //     self._setListening(true, event);
-      //   }
-      // });
+      // if someone stops listening
+      self.on('removeListener', function(event)
+      {
+        // and there are none left
+        if (!self.listeners(event).length)
+        {
+          // stop retrieving data
+          self._setListening(false, event);
+        }
+      });
 
-      // // if someone stops listening
-      // self.on('removeListener', function(event)
-      // {
-      //   // and there are none left
-      //   if (!self.listeners(event).length)
-      //   {
-      //     // stop retrieving data
-      //     self._setListening(false, event);
-      //   }
-      // });
+      setImmediate(function () {
+        // Emit a ready event
+        self.emit('ready');
+        // Start listening for IRQ interrupts
+        self.irqwatcher = self._fetchTriggerValues.bind(self);
+        self.attiny.setIRQCallback(self.irqwatcher);
 
-      // // Emit the ready event
-      // callback && callback(null, self);
-      // self.emit('ready');
+      });
+
+      if (callback) {
+        callback(null, self); 
+      }
     }
   });
 }
 
 // We want the ability to emit events
 util.inherits(Ambient, EventEmitter);
-
-
 
 Ambient.prototype._fetchTriggerValues = function() {
 
@@ -123,9 +127,9 @@ Ambient.prototype._fetchTriggerValues = function() {
   // cmd, cmd_echo, light_val (16 bits), sound_val (16 bits)
   var packet = new Buffer([FETCH_TRIGGER_CMD, 0x00, 0x00, 0x00, 0x00, 0x00]);
 
-  // Transfer the command
-  self.spi.transfer(packet, function spiComplete(err, response) {
-    if (self._validateResponse(response, [PACKET_CONF, FETCH_TRIGGER_CMD]))
+  // transceive the command
+  self.attiny.transceive(packet, function spiComplete(err, response) {
+    if (self.attiny._validateResponse(response, [PACKET_CONF, FETCH_TRIGGER_CMD]))
     {
       // make a buffer with the cmd and cmd_echo spliced out
       var data = new Buffer(response.slice(2, response.length));
@@ -144,7 +148,7 @@ Ambient.prototype._fetchTriggerValues = function() {
 
       setImmediate(function() {
         self.irqwatcher = self._fetchTriggerValues.bind(self);
-        self.irq.once('high', self.irqwatcher);
+        self.attiny.setIRQCallback(self.irqwatcher);
       });
     }
     else
@@ -207,16 +211,15 @@ Ambient.prototype._readBuffer = function(command, readLen, callback) {
   bytes.fill(0);
 
   var stop = new Buffer(1);
-  stop.writeUInt8(STOP_CONF, 0);
+  stop.writeUInt8(FIN_CONF, 0);
 
   var packet = Buffer.concat([header, bytes, stop]);
 
-  // Synchronously transfer command to read
-  self.spi.transfer(packet, function spiComplete(err, data) {
-
+  // Synchronously transceive command to read
+  self.attiny.transceive(packet, function spiComplete(err, data) {
     // If the response is valid
-    if (self._validateResponse(data, [PACKET_CONF, command, readLen/2]) &&
-      data[data.length-1] === STOP_CONF) {
+    if (self.attiny._validateResponse(data, [PACKET_CONF, command, readLen/2]) &&
+      data[data.length-1] === FIN_CONF) {
 
       data = self._normalizeBuffer(data.slice(header.length, data.length-1));
 
@@ -264,7 +267,7 @@ Ambient.prototype._setListening = function(enable, event) {
       clearInterval(this.pollInterval);
       this.pollInterval = null;
       if(this.irqwatcher) {
-        this.irq.removeListener('high', this.irqwatcher);
+        this.attiny.irq.removeListener('high', this.irqwatcher);
       }
     }
   }
@@ -288,9 +291,9 @@ Ambient.prototype._setTrigger = function(triggerCmd, triggerVal, callback) {
   var packet = new Buffer([triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1), 0x00]);
 
   // Send it over SPI
-  self.spi.transfer(packet, function spiComplete(err, data) {
+  self.attiny.transceive(packet, function spiComplete(err, data) {
     // If it's a valud response
-    if (self._validateResponse(data, [PACKET_CONF, triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1)]))
+    if (self.attiny._validateResponse(data, [PACKET_CONF, triggerCmd, dataBuffer.readUInt8(0), dataBuffer.readUInt8(1)]))
     {
 
       // Get the event title
@@ -368,7 +371,7 @@ Ambient.prototype.setSoundTrigger = function(triggerVal, callback) {
 
 function use (hardware, callback) {
   if(!hardware) {
-    console.log(new Error('Improperly specified Tessel port.'));
+    console.warn(new Error('Improperly specified Tessel port.'));
   }
   return new Ambient(hardware, callback);
 }

@@ -41,7 +41,7 @@ volatile DataBuffer bufferForCommand(uint8_t command);
 extern void _exit();
 
 int main(void) {
-  checksum = 0x58e4;//calculate_checksum( (unsigned short) _exit << 1 );
+  checksum = calculate_checksum( (unsigned short) _exit << 1 );
 
   setup();
 
@@ -267,12 +267,27 @@ ISR(INT0_vect){
       spiX_wait();
       break;
 
+    // If the checksum is asked for
+    case CRC_CMD:
+      spiX_put((checksum >> 8) & 0xff);
+      spiX_wait();
+      spiX_put((checksum >> 0) & 0xff);
+      spiX_wait();
+      break;
+
     // If they want firmware version
     case FIRMWARE_CMD:
       // Send the firmware version
-      spiX_put(16);
+      spiX_put(read_firmware_version());
       spiX_wait();
       break;
+    // If they want firmware version
+    case MODULE_ID_CMD:
+      // Send the firmware version
+      spiX_put(read_module_id());
+      spiX_wait();
+      break;
+
     // Routine for reading buffers
     case LIGHT_CMD:
     case SOUND_CMD:
@@ -374,13 +389,6 @@ ISR(INT0_vect){
       cbi(PORTB, IRQ_PIN);
 
       break;
-    // If the checksum is asked for
-    case CRC_CMD:
-      spiX_put((checksum >> 8) & 0xff);
-      spiX_wait();
-      spiX_put((checksum >> 0) & 0xff);
-      spiX_wait();
-      break;
  }
 
   // Disable USI
@@ -393,4 +401,3 @@ ISR(INT0_vect){
   // Re-enable ADC reads
   sbi(TIMSK1, OCIE1A);
 }
-
