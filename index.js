@@ -180,7 +180,7 @@ Ambient.prototype._normalizeValue = function(value) {
   return (value/MAX_AMBIENT_VALUE);
 };
 
-Ambient.prototype._pollBuffers = function() {
+Ambient.prototype._pollBuffers = function(cb) {
   var self = this;
 
   if (!self.connected) {
@@ -192,11 +192,11 @@ Ambient.prototype._pollBuffers = function() {
   }
   if (self.lightPolling)
   {
-    self.getLightBuffer();
+    self.getLightBuffer(cb);
   }
   if (self.soundPolling)
   {
-    self.getSoundBuffer();
+    self.getSoundBuffer(cb);
   }
 };
 
@@ -250,7 +250,8 @@ Ambient.prototype._readBuffer = function(command, readLen, callback) {
 };
 
 Ambient.prototype._setListening = function(enable, event) {
-
+  var self = this;
+  this._pollTimeout = null;
   if (event === "light") {
     this.lightPolling = enable;
   } else if (event === "sound") {
@@ -262,13 +263,19 @@ Ambient.prototype._setListening = function(enable, event) {
   // if the other buffer is not already polling
   if (event === "light" && !this.soundPolling ||
       event === "sound" && !this.lightPolling) {
-    if (enable) {
-      // start polling
-      this.pollInterval = setInterval(this._pollBuffers.bind(this), this.pollingFrequency);
-    } else if (this.pollInterval !== null) {
+
+    function pollBuffers() {
+      self._pollBuffers(function(){
+        self._pollTimeout = setTimeout(pollBuffers, self.pollingFrequency);
+      });
+    }
+
+    if (enable && self._pollTimeout == null) {
+      pollBuffers();
+    } else if (!enable && self._pollTimeout !== null) {
       // stop polling
-      clearInterval(this.pollInterval);
-      this.pollInterval = null;
+      clearTimeout(self._pollTimeout);
+      self._pollTimeout = null;
       if(this.irqwatcher) {
         this.attiny.irq.removeListener('high', this.irqwatcher);
       }
