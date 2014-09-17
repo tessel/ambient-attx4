@@ -251,7 +251,6 @@ Ambient.prototype._readBuffer = function(command, readLen, callback) {
 
 Ambient.prototype._setListening = function(enable, event) {
   var self = this;
-  this._pollTimeout = null;
   if (event === "light") {
     this.lightPolling = enable;
   } else if (event === "sound") {
@@ -270,9 +269,10 @@ Ambient.prototype._setListening = function(enable, event) {
       });
     }
 
-    if (enable && self._pollTimeout == null) {
+    if (enable && !self._pollTimeout) {
+      // if we want to enable polling & there isn't already a poll
       pollBuffers();
-    } else if (!enable && self._pollTimeout !== null) {
+    } else if (!enable && self._pollTimeout) {
       // stop polling
       clearTimeout(self._pollTimeout);
       self._pollTimeout = null;
