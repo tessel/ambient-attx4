@@ -1,6 +1,6 @@
 {
   "name": "ambient-attx4",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Library to run the Ambient Module for Tessel. Detects ambient light and sound levels",
   "main": "index.js",
   "scripts": {
@@ -28,7 +28,7 @@
     "./test": "false"
   },
   "dependencies": {
-    "attiny-common" : "^0.0.1",
+    "attiny-common" : "^0.0.5",
     "sync-queue" : "^0.0.1"
     },
   "devDependencies": {
