@@ -16,7 +16,7 @@ async.series([
       t.ok(ambient, 'The ambient module object was not returned');
       t.equal(err, undefined, 'There was an error connecting');
       // Test events
-      var timeout = 1000;
+      var timeout = 1500;
       // ready
       var readyTimer = setTimeout(function () {
         t.ok(false, 'failed to emit ready event in a reasonable amount of time');
