@@ -83,6 +83,7 @@ function Ambient(hardware, callback) {
       // If someone starts listening
       self.on('newListener', function(event) {
         // and there weren't listeners before
+        // console.log('new listener', event, self.listeners(event)); 
         if (!self.listeners(event).length)
         {
           // start retrieving data for this type of buffer
@@ -105,7 +106,7 @@ function Ambient(hardware, callback) {
         // Emit a ready event
         self.emit('ready');
         // Start listening for IRQ interrupts
-        self.irqwatcher = self._fetchTriggerValues.bind(self);
+        self.irqwatcher = self._fetchTriggerValues.bind(self, null);
         self.attiny.setIRQCallback(self.irqwatcher);
 
       });
@@ -120,10 +121,9 @@ function Ambient(hardware, callback) {
 // We want the ability to emit events
 util.inherits(Ambient, EventEmitter);
 
-Ambient.prototype._fetchTriggerValues = function() {
+Ambient.prototype._fetchTriggerValues = function(callback) {
 
   var self = this;
-
   // cmd, cmd_echo, light_val (16 bits), sound_val (16 bits)
   var packet = new Buffer([FETCH_TRIGGER_CMD, 0x00, 0x00, 0x00, 0x00, 0x00]);
 
@@ -147,13 +147,20 @@ Ambient.prototype._fetchTriggerValues = function() {
       }
 
       setImmediate(function() {
-        self.irqwatcher = self._fetchTriggerValues.bind(self);
+        self.irqwatcher = self._fetchTriggerValues.bind(self, null);
         self.attiny.setIRQCallback(self.irqwatcher);
       });
+      if (callback) {
+        callback(null, lightTriggerValue, soundTriggerValue);
+      }
     }
     else
     {
       console.warn("Warning... Invalid trigger values fetched...");
+      if (callback) {
+        callback(new Error("Invalid trigger values fetched!" + response));
+      }
+      return
     }
   });
 };
@@ -249,13 +256,17 @@ Ambient.prototype._readBuffer = function(command, readLen, callback) {
   });
 };
 
-Ambient.prototype._setListening = function(enable, event) {
+Ambient.prototype._setListening = function(enable, event, callback) {
   var self = this;
   if (event === "light") {
     this.lightPolling = enable;
   } else if (event === "sound") {
     this.soundPolling = enable;
-  } else {
+  } 
+  else {
+    if (callback) {
+      callback(new Error("Invalid listnening event: " + event));
+    }
     return;
   }
 
@@ -276,16 +287,52 @@ Ambient.prototype._setListening = function(enable, event) {
       // stop polling
       clearTimeout(self._pollTimeout);
       self._pollTimeout = null;
-      if(this.irqwatcher) {
-        this.attiny.irq.removeListener('high', this.irqwatcher);
-      }
+    }
+    if (callback) {
+      callback();
     }
   }
 };
 
-Ambient.prototype.disable = function () {
-  this._setListening(false, 'light');
-  this._setListening(false, 'sound');
+Ambient.prototype.disable = function(callback) {
+  this.disableTriggers(function(err) {
+    if (err) {
+      if (callback) {
+        callback(err);
+      }
+      return;
+    }
+    this.removeAllListeners();
+  }.bind(this))
+}
+
+Ambient.prototype.disableTriggers = function (callback) {
+  var self = this;
+  self._setTrigger(LIGHT_TRIGGER_CMD, 0, function(err) {
+    if (err) {
+      if (callback) {
+        callback(err);
+      }
+      return;
+    }
+    self._setTrigger(SOUND_TRIGGER_CMD, 0, function(err) {
+      if (err) {
+        if (callback) {
+          callback(err);
+        }
+        return;
+      }
+      if (self.attiny.irq.read()) {
+
+        self._fetchTriggerValues(callback);
+      }
+      else {
+        if (callback) {
+          callback();
+        }
+      }
+    });
+  });
 };
 
 Ambient.prototype._setTrigger = function(triggerCmd, triggerVal, callback) {
