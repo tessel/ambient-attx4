@@ -7,7 +7,7 @@ var tessel = require('tessel');
 var ambientLib = require('../');
 var ambient;
 
-test.count(56);
+test.count(101);
 
 async.series([
   // Test connecting
@@ -26,62 +26,62 @@ async.series([
         clearTimeout(readyTimer);
         t.end();
 
-        // t.ok(true, 'ready was emitted');
-        // // check data
-        // var numEvents = 2;
-        // var countEvents = 0;
-        // // light data
-        // var lightDataTimer = setTimeout(function () {
-        //   t.ok(false, 'failed to emit a light data event in a reasonable amount of time');
-        //   t.end();
-        // }, timeout);
-        // ambient.on('light', function (data) {
-        //   clearTimeout(lightDataTimer);
-        //   t.ok(true, 'light data was emitted');
-        //   // Check valid data
-        //   t.ok(data.length > 0, 'the data reading has no length');
-        //   // For each data point:
-        //   data.forEach(function (datum,index) {
-        //     // It's a number...
-        //     t.equal(typeof datum, 'number', 'value ' + datum + ' should be a number');
-        //     // ...between 0 and 1
-        //     t.ok(datum >= 0.0 && datum <= 1.0, 'data point ' + datum + ' is out of range');
-        //     if (index == (data.length - 1)) {
-        //       // clean up
-        //       ambient.removeAllListeners('light');
-        //       countEvents++;
-        //       if(countEvents == numEvents) {
-        //        t.end();
-        //       }
-        //     }
-        //   });
-        // });
+        t.ok(true, 'ready was emitted');
+        // check data
+        var numEvents = 2;
+        var countEvents = 0;
+        // light data
+        var lightDataTimer = setTimeout(function () {
+          t.ok(false, 'failed to emit a light data event in a reasonable amount of time');
+          t.end();
+        }, timeout);
+        ambient.on('light', function (data) {
+          clearTimeout(lightDataTimer);
+          t.ok(true, 'light data was emitted');
+          // Check valid data
+          t.ok(data.length > 0, 'the data reading has no length');
+          // For each data point:
+          data.forEach(function (datum,index) {
+            // It's a number...
+            t.equal(typeof datum, 'number', 'value ' + datum + ' should be a number');
+            // ...between 0 and 1
+            t.ok(datum >= 0.0 && datum <= 1.0, 'data point ' + datum + ' is out of range');
+            if (index == (data.length - 1)) {
+              // clean up
+              ambient.removeAllListeners('light');
+              countEvents++;
+              if(countEvents == numEvents) {
+               t.end();
+              }
+            }
+          });
+        });
         // sound data
-        // var soundDataTimer = setTimeout(function () {
-        //   t.ok(false, 'failed to emit a sound data event in a reasonable amount of time');
-        //   t.end();
-        // }, timeout);
-        // ambient.on('sound', function (data) {
-        //   clearTimeout(soundDataTimer);
-        //   t.ok(true, 'sound data was emitted');
-        //   // Check valid data
-        //   t.ok(data.length > 0, 'the data reading has no length');
-        //   // For each data point:
-        //   data.forEach(function (datum,index) {
-        //     // It's a number...
-        //     t.equal(typeof datum, 'number', 'value ' + datum + ' should be a number');
-        //     // ...between 0 and 1
-        //     t.ok(datum >= 0.0 && datum <= 1.0, 'data point ' + datum + ' is out of range');
-        //     if (index == (data.length - 1)) {
-        //       // clean up
-        //       ambient.removeAllListeners('sound');
-        //       countEvents++;
-        //       if(countEvents == numEvents) {
-        //         t.end();
-        //       }
-        //     }
-        //   });
-        // });
+        var soundDataTimer = setTimeout(function () {
+          t.ok(false, 'failed to emit a sound data event in a reasonable amount of time');
+          t.end();
+        }, timeout);
+        ambient.on('sound', function (data) {
+          clearTimeout(soundDataTimer);
+          t.ok(true, 'sound data was emitted');
+          // Check valid data
+          t.ok(data.length > 0, 'the data reading has no length');
+          // For each data point:
+          data.forEach(function (datum,index) {
+            // It's a number...
+            t.equal(typeof datum, 'number', 'value ' + datum + ' should be a number');
+            // ...between 0 and 1
+            t.ok(datum >= 0.0 && datum <= 1.0, 'data point ' + datum + ' is out of range');
+            if (index == (data.length - 1)) {
+              // clean up
+              ambient.removeAllListeners('sound');
+              countEvents++;
+              if(countEvents == numEvents) {
+                t.end();
+              }
+            }
+          });
+        });
       });
       // error
       // Fail if we get an error
