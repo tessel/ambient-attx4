@@ -276,9 +276,6 @@ Ambient.prototype._setListening = function(enable, event) {
       // stop polling
       clearTimeout(self._pollTimeout);
       self._pollTimeout = null;
-      if(this.irqwatcher) {
-        this.attiny.irq.removeListener('high', this.irqwatcher);
-      }
     }
   }
 };
