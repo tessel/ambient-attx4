@@ -24,7 +24,6 @@ async.series([
       }, timeout);
       ambient.on('ready', function () {
         clearTimeout(readyTimer);
-        t.end();
 
         t.ok(true, 'ready was emitted');
         // check data
