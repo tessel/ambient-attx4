@@ -112,7 +112,7 @@ ambient.on('error', function (err) {
  Emitted upon error.  
 
 &#x20;<a href="#api-ambient-on-light-callback-lightData-Get-a-stream-of-light-data" name="api-ambient-on-light-callback-lightData-Get-a-stream-of-light-data">#</a> ambient<b>.on</b>( 'light', callback(lightData) )  
- Get a stream of light data.  
+ Get a stream of light data. Fetches data about every 500 ms and frequency can be changed [here](https://github.com/tessel/ambient-attx4/blob/master/index.js#L51). 
 
 &#x20;<a href="#api-ambient-on-light-trigger-callback-lightTriggerValue-Emitted-upon-crossing-light-trigger-threshold" name="api-ambient-on-light-trigger-callback-lightTriggerValue-Emitted-upon-crossing-light-trigger-threshold">#</a> ambient<b>.on</b>( 'light-trigger', callback(lightTriggerValue) )  
  Emitted upon crossing light trigger threshold.  
@@ -121,7 +121,7 @@ ambient.on('error', function (err) {
  Emitted upon first successful communication between the Tessel and the module.  
 
 &#x20;<a href="#api-ambient-on-sound-callback-soundData-Get-a-stream-of-sound-level-data" name="api-ambient-on-sound-callback-soundData-Get-a-stream-of-sound-level-data">#</a> ambient<b>.on</b>( 'sound', callback(soundData) )  
- Get a stream of sound level data.  
+ Get a stream of sound level data. Fetches data about every 500 ms and frequency can be changed [here](https://github.com/tessel/ambient-attx4/blob/master/index.js#L51). 
 
 &#x20;<a href="#api-ambient-on-sound-trigger-callback-soundTriggerValue-Emitted-upon-crossing-sound-trigger-threshold" name="api-ambient-on-sound-trigger-callback-soundTriggerValue-Emitted-upon-crossing-sound-trigger-threshold">#</a> ambient<b>.on</b>( 'sound-trigger', callback(soundTriggerValue) )  
  Emitted upon crossing sound trigger threshold.  
