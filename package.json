@@ -28,7 +28,7 @@
     "./test": "false"
   },
   "dependencies": {
-    "attiny-common" : "^0.0.6",
+    "attiny-common" : "0.0.7",
     "sync-queue" : "^0.0.1"
     },
   "devDependencies": {
