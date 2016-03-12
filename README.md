@@ -19,13 +19,13 @@ npm install ambient-attx4
 ###Example
 ```js
 /*********************************************
-This ambient module example console.logs 
-ambient light and sound levels and whenever a 
+This ambient module example console.logs
+ambient light and sound levels and whenever a
 specified light or sound level trigger is met.
 *********************************************/
 
 var tessel = require('tessel');
-var ambientlib = require('../');// Replace '../' with 'ambient-attx4' in your own code
+var ambientlib = require('../'); // Replace '../' with 'ambient-attx4' in your own code
 
 var ambient = ambientlib.use(tessel.port['A']);
 
@@ -33,51 +33,18 @@ ambient.on('ready', function () {
  // Get points of light and sound data.
   setInterval( function () {
     ambient.getLightLevel( function(err, ldata) {
+      if (err) throw err;
       ambient.getSoundLevel( function(err, sdata) {
+        if (err) throw err;
         console.log("Light level:", ldata.toFixed(8), " ", "Sound Level:", sdata.toFixed(8));
     });
   })}, 500); // The readings will happen every .5 seconds unless the trigger is hit
-
-  ambient.setLightTrigger(0.5);
-
-  // Set a light level trigger
-  // The trigger is a float between 0 and 1
-  ambient.on('light-trigger', function(data) {
-    console.log("Our light trigger was hit:", data);
-
-    // Clear the trigger so it stops firing
-    ambient.clearLightTrigger();
-    //After 1.5 seconds reset light trigger
-    setTimeout(function () { 
-
-        ambient.setLightTrigger(0.5);
-
-    },1500);
-  });
-
-  // Set a sound level trigger
-  // The trigger is a float between 0 and 1
-  ambient.setSoundTrigger(0.1);
-
-  ambient.on('sound-trigger', function(data) {
-    console.log("Something happened with sound: ", data);
-
-    // Clear it
-    ambient.clearSoundTrigger();
-
-    //After 1.5 seconds reset sound trigger
-    setTimeout(function () { 
-      
-        ambient.setSoundTrigger(0.1);
-
-    },1500);
-
-  });
 });
 
 ambient.on('error', function (err) {
   console.log(err)
 });
+
 ```
 
 ###Methods
@@ -112,7 +79,7 @@ ambient.on('error', function (err) {
  Emitted upon error.  
 
 &#x20;<a href="#api-ambient-on-light-callback-lightData-Get-a-stream-of-light-data" name="api-ambient-on-light-callback-lightData-Get-a-stream-of-light-data">#</a> ambient<b>.on</b>( 'light', callback(lightData) )  
- Get a stream of light data. Fetches data about every 500 ms and frequency can be changed [here](https://github.com/tessel/ambient-attx4/blob/master/index.js#L51). 
+ Get a stream of light data. Fetches data about every 500 ms and frequency can be changed [here](https://github.com/tessel/ambient-attx4/blob/master/index.js#L51).
 
 &#x20;<a href="#api-ambient-on-light-trigger-callback-lightTriggerValue-Emitted-upon-crossing-light-trigger-threshold" name="api-ambient-on-light-trigger-callback-lightTriggerValue-Emitted-upon-crossing-light-trigger-threshold">#</a> ambient<b>.on</b>( 'light-trigger', callback(lightTriggerValue) )  
  Emitted upon crossing light trigger threshold.  
@@ -121,13 +88,13 @@ ambient.on('error', function (err) {
  Emitted upon first successful communication between the Tessel and the module.  
 
 &#x20;<a href="#api-ambient-on-sound-callback-soundData-Get-a-stream-of-sound-level-data" name="api-ambient-on-sound-callback-soundData-Get-a-stream-of-sound-level-data">#</a> ambient<b>.on</b>( 'sound', callback(soundData) )  
- Get a stream of sound level data. Fetches data about every 500 ms and frequency can be changed [here](https://github.com/tessel/ambient-attx4/blob/master/index.js#L51). 
+ Get a stream of sound level data. Fetches data about every 500 ms and frequency can be changed [here](https://github.com/tessel/ambient-attx4/blob/master/index.js#L51).
 
 &#x20;<a href="#api-ambient-on-sound-trigger-callback-soundTriggerValue-Emitted-upon-crossing-sound-trigger-threshold" name="api-ambient-on-sound-trigger-callback-soundTriggerValue-Emitted-upon-crossing-sound-trigger-threshold">#</a> ambient<b>.on</b>( 'sound-trigger', callback(soundTriggerValue) )  
  Emitted upon crossing sound trigger threshold.  
 
 ###Further Examples  
-* [Ambient Realtime](https://github.com/tessel/ambient-attx4/blob/master/examples/ambient_realtime.js). This example demonstrates the two methods for getting the ambient module's data. 
+* [Ambient Triggers](https://github.com/tessel/ambient-attx4/blob/master/examples/ambient_triggers.js). This example demonstrates the two methods for handling an event when the sound or light gets above a defined threshold. 
 
 ### License
 MIT or Apache 2.0, at your option  
