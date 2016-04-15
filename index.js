@@ -71,9 +71,9 @@ function Ambient(hardware, callback) {
 
       // Call the callback with an error
       if (callback) {
-          setImmediate(function() {
-            callback(err);
-          });
+        setImmediate(function() {
+          callback(err);
+        });
       }
 
       return;
