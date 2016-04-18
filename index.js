@@ -66,16 +66,12 @@ function Ambient(hardware, callback) {
   // Make sure we can communicate with the module
   self.attiny.initialize(firmwareOptions, function(err) {
     if (err) {
-      // Emit the error
-      self.emit('error', err);
-
-      // Call the callback with an error
       if (callback) {
-        callback(err);
+        callback(err)
+      } else {
+        self.emit('error', err)
       }
-
-      return;
-    } 
+    }
     else {
 
       self.connected = true;
