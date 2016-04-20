@@ -4,7 +4,9 @@
   "description": "Library to run the Ambient Module for Tessel. Detects ambient light and sound levels",
   "main": "index.js",
   "scripts": {
-    "test": "tinytap -e 'tessel run {} ${AMBIENT_PORT}' test/*.js"
+    "test": "grunt",
+    "tap-tessel-1": "tinytap -e 'tessel run {} ${AMBIENT_PORT}' test/*.js",
+    "tap-tessel-2": "echo 'TODO'"
   },
   "repository": {
     "type": "git",
@@ -28,11 +30,20 @@
     "./test": "false"
   },
   "dependencies": {
-    "attiny-common" : "0.0.9",
-    "sync-queue" : "^0.0.1"
-    },
+    "attiny-common": "0.0.9",
+    "sync-queue": "^0.0.1"
+  },
   "devDependencies": {
-    "tinytap": "^0.2.0",
-    "async" : "^0.9.0"
+    "async": "^0.9.0",
+    "grunt": "^0.4.5",
+    "grunt-cli": "^0.1.13",
+    "grunt-contrib-jshint": "^0.11.2",
+    "grunt-contrib-nodeunit": "^0.4.1",
+    "grunt-contrib-watch": "^0.6.1",
+    "grunt-jsbeautifier": "^0.2.10",
+    "grunt-jscs": "^2.3.0",
+    "mkdirp": "^0.5.1",
+    "sinon": "^1.14.1",
+    "tinytap": "^0.2.0"
   }
 }
