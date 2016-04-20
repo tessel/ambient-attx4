@@ -9,7 +9,7 @@
 
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
-var Attiny = require('attiny-common');
+var Attiny = global.IS_TEST_ENV ? require('./test/common/attiny-common-mock') : require('attiny-common');
 var MODULE_ID = 0x08;
 var TINY44_SIGNATURE = 0x9207;
 var FIRMWARE_FILE = __dirname + '/firmware/src/ambient-attx4.hex';
