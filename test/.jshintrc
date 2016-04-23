@@ -32,6 +32,7 @@
     "Ambient": true,
     "Attiny": true,
     "EventEmitter": true,
-    "exported": true
+    "exported": true,
+    "sandbox": true
   }
 }

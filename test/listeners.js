@@ -11,26 +11,26 @@ var ambient;
 
 test.count(1);
 
-test("Using multiple kinds of listeners", function(tester) {
+test('Using multiple kinds of listeners', function(tester) {
   t = tester;
   ambient = ambientlib.use(tessel.port[portname], start);
 
   ambient.on('error', function(err) {
     t.fail(err.message);
-  })
-})
+  });
+});
 
-function start () {
+function start() {
   var numEvents = 2;
   var countEvents = 0;
 
   // Set a light data timer
-  var lightDataTimer = setTimeout(function () {
+  var lightDataTimer = setTimeout(function() {
     t.fail('failed to emit a light data event in a reasonable amount of time');
   }, timeout);
 
   // Wait for light readings
-  ambient.on('light', function (data) {
+  ambient.on('light', function() {
     // Clear that light data timer
     clearTimeout(lightDataTimer);
     // Remove ALL Listeners!
@@ -38,18 +38,18 @@ function start () {
     // There was another event
     countEvents++;
     // If there were x number of events
-    if(countEvents == numEvents) {
+    if (countEvents === numEvents) {
       // add a lighttrigger listener
       light();
     }
   });
 
   // Set a sound data tmer
-  var soundDataTimer = setTimeout(function () {
-    t.fail('failed to emit a sound data event in a reasonable amount of time')
+  var soundDataTimer = setTimeout(function() {
+    t.fail('failed to emit a sound data event in a reasonable amount of time');
   }, timeout);
   // When we get sound
-  ambient.on('sound', function (data) {
+  ambient.on('sound', function() {
     // clear the timeout
     clearTimeout(soundDataTimer);
     // remove the sound listeners
@@ -57,23 +57,22 @@ function start () {
     // we shouldn't get another event
     countEvents++;
     // if we do
-    if(countEvents == numEvents) {
+    if (countEvents === numEvents) {
       // start the light trigger listener
       light();
     }
   });
 }
 
-function light () {
-  ambient.setLightTrigger(triggerVal, function (err, val) {
-    var s = new Date();
-    var failLightTrigger = setTimeout(function () {
-      t.fail('Light trigger timed out.')
+function light() {
+  ambient.setLightTrigger(triggerVal, function() {
+    var failLightTrigger = setTimeout(function() {
+      t.fail('Light trigger timed out.');
     }, timeout);
-    ambient.on('light-trigger', function (datum) {
+    ambient.on('light-trigger', function() {
       // Timeout cancelled
       clearTimeout(failLightTrigger);
-      ambient.clearLightTrigger(function (err, val) {
+      ambient.clearLightTrigger(function(err) {
         t.equal(err, null);
         t.end();
       });

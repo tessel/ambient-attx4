@@ -1,4 +1,4 @@
-exports["Ambient"] = {
+exports['Ambient'] = {
   setUp: function(done) {
     // Make stubs/spies/mocks with `sandbox`
     done();
