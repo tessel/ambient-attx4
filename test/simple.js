@@ -9,10 +9,10 @@ var ambient = require('../').use(tessel.port[portname]);
 
 console.log('1..2');
 
-ambient.on('ready', function () {
+ambient.on('ready', function() {
   var count = 0;
 
-  ambient.on('light', function listener (data) {
+  ambient.on('light', function listener(data) {
     console.log('# light', data);
     console.log('ok');
     this.removeListener('light', listener);
@@ -22,7 +22,7 @@ ambient.on('ready', function () {
     }
   });
 
-  ambient.on('sound', function listener (data) {
+  ambient.on('sound', function listener(data) {
     console.log('# sound', data);
     console.log('ok');
     this.removeListener('sound', listener);
@@ -56,6 +56,6 @@ ambient.on('ready', function () {
   // });
 });
 
-ambient.on('error', function (err) {
-  console.log('not ok', err)
+ambient.on('error', function(err) {
+  console.log('not ok', err);
 });
