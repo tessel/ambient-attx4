@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "grunt",
-    "tap-tessel-1": "tinytap -e 'tessel run {} ${AMBIENT_PORT}' test/*.js",
+    "tap-tessel-1": "tinytap -e 'tessel run {} ${AMBIENT_PORT}' test/hardware/*.js",
     "tap-tessel-2": "echo 'TODO'"
   },
   "repository": {
