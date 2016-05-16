@@ -94,7 +94,7 @@ ambient.on('error', function (err) {
  Emitted upon crossing sound trigger threshold.  
 
 ###Further Examples  
-* [Ambient Triggers](https://github.com/tessel/ambient-attx4/blob/master/examples/ambient_triggers.js). This example demonstrates the two methods for handling an event when the sound or light gets above a defined threshold. 
+* [Ambient Triggers](https://github.com/tessel/ambient-attx4/blob/master/examples/ambient-triggers.js). This example demonstrates the two methods for handling an event when the sound or light gets above a defined threshold. 
 
 ### License
 MIT or Apache 2.0, at your option  
