@@ -51,3 +51,58 @@ exports['Ambient'] = {
     });
   }
 };
+
+exports['Ambient.prototype._normalizeBuffer'] = {
+  setUp: function(done) {
+    this.sensor = new Ambient();
+    this.normalizeValue = sandbox.stub(Ambient.prototype, '_normalizeValue', () => {
+      return 2;
+    });
+    this.normalizeBuffer = sandbox.stub(Ambient.prototype, '_normalizeBuffer', (buffer) => {
+      return new Array(buffer.length / 2).fill(this.normalizeValue());
+    });
+
+    done();
+  },
+
+  tearDown: function(done) {
+    sandbox.restore();
+    done();
+  },
+
+  returnsNormalizedBuffer: function(test) {
+    test.expect(2);
+
+    test.deepEqual(this.normalizeBuffer(new Buffer([1, 1])), [2]);
+    test.equal(this.normalizeValue.callCount, 1);
+
+    test.done();
+  }
+};
+
+exports['Ambient.prototype._normalizeValue'] = {
+  setUp: function(done) {
+    this.sensor = new Ambient();
+    this.MAX_AMBIENT_VALUE = 1024;
+    this.normalizeValue = sandbox.stub(Ambient.prototype, '_normalizeValue', (value) => {
+      return value / this.MAX_AMBIENT_VALUE;
+    });
+
+    done();
+  },
+
+  tearDown: function(done) {
+    sandbox.restore();
+    done();
+  },
+
+  returnsNormalizedValue: function(test) {
+    test.expect(3);
+
+    test.equal(this.normalizeValue(1024), 1);
+    test.equal(this.normalizeValue(0), 0);
+    test.equal(this.normalizeValue(null), 0);
+
+    test.done();
+  }
+};
