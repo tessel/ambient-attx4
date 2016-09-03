@@ -34,6 +34,8 @@ var FETCH_TRIGGER_CMD = 6;
 var FIRMWARE_VERSION = 0x03;
 var CRC = 0x1eb5;
 
+var REBOOT_TIME = 100; // Amount of time needed to reboot and configure registers
+
 function Ambient(hardware, callback) {
   // Create a new instance of an attiny
   this.attiny = new Attiny(hardware);
@@ -63,7 +65,7 @@ function Ambient(hardware, callback) {
   };
 
   // Make sure we can communicate with the module
-  self.attiny.initialize(firmwareOptions, function(err) {
+  self.attiny.initialize(REBOOT_TIME, firmwareOptions, function(err) {
     if (err) {
       if (callback) {
         callback(err);

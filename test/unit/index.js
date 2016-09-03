@@ -24,15 +24,15 @@ exports['Ambient'] = {
     test.equal(this.sensor.pollInterval, undefined);
     test.equal(this.attinyInitialized.callCount, 1);
 
-    // called with firmwareOptions, callback
-    test.equal(this.attinyInitialized.args[0].length, 2);
+    // called with rebootTime, firmwareOptions, callback
+    test.equal(this.attinyInitialized.args[0].length, 3);
     test.done();
   },
 
   attinyInitialization: function(test) {
     test.expect(3);
 
-    this.attinyInitialized = sandbox.stub(Attiny.prototype, 'initialize', (_, callback) => {
+    this.attinyInitialized = sandbox.stub(Attiny.prototype, 'initialize', (rebootTime, _, callback) => {
       callback(null, this.sensor);
     });
 
