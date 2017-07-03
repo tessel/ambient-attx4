@@ -1,4 +1,4 @@
-#Ambient
+# Ambient
 [![Code of Conduct](https://img.shields.io/badge/%E2%9D%A4-code%20of%20conduct-blue.svg?style=flat)](https://github.com/tessel/project/blob/master/CONDUCT.md)
 
 Driver for the ambient-attx4 Tessel ambient (light and sound detecting) module. The hardware documentation can be found [here](https://github.com/tessel/hardware/blob/master/modules-overview.md#ambient).
@@ -13,12 +13,12 @@ You'll notice that the light readings seem to be logarithmic - when making the a
 
 If you run into any issues you can ask for support on the [Ambient Module Forums](http://forums.tessel.io/category/ambient).
 
-###Installation
+### Installation
 ```sh
 npm install ambient-attx4
 ```
 
-###Example
+### Example
 ```js
 /*********************************************
 This ambient module example console.logs
@@ -49,7 +49,7 @@ ambient.on('error', function (err) {
 
 ```
 
-###Methods
+### Methods
 
 &#x20;<a href="#api-ambient-clearLightTrigger-callback-err-triggerVal-Clears-trigger-listener-for-light-trigger" name="api-ambient-clearLightTrigger-callback-err-triggerVal-Clears-trigger-listener-for-light-trigger">#</a> ambient<b>.clearLightTrigger</b>( callback(err, triggerVal) )  
  Clears trigger listener for light trigger.  
@@ -75,7 +75,7 @@ ambient.on('error', function (err) {
 &#x20;<a href="#api-ambient-setSoundTrigger-triggerVal-callback-err-triggerVal-Sets-a-trigger-to-emit-a-sound-trigger-event-when-triggerVal-is-reached-triggerVal-is-a-float-between-0-and-1-0" name="api-ambient-setSoundTrigger-triggerVal-callback-err-triggerVal-Sets-a-trigger-to-emit-a-sound-trigger-event-when-triggerVal-is-reached-triggerVal-is-a-float-between-0-and-1-0">#</a> ambient<b>.setSoundTrigger</b>( triggerVal, callback(err, triggerVal) )  
  Sets a trigger to emit a 'sound-trigger' event when triggerVal is reached. triggerVal is a float between 0 and 1.0.  
 
-###Events
+### Events
 
 &#x20;<a href="#api-ambient-on-error-callback-err-Emitted-upon-error" name="api-ambient-on-error-callback-err-Emitted-upon-error">#</a> ambient<b>.on</b>( 'error', callback(err) )  
  Emitted upon error.  
@@ -95,7 +95,7 @@ ambient.on('error', function (err) {
 &#x20;<a href="#api-ambient-on-sound-trigger-callback-soundTriggerValue-Emitted-upon-crossing-sound-trigger-threshold" name="api-ambient-on-sound-trigger-callback-soundTriggerValue-Emitted-upon-crossing-sound-trigger-threshold">#</a> ambient<b>.on</b>( 'sound-trigger', callback(soundTriggerValue) )  
  Emitted upon crossing sound trigger threshold.  
 
-###Further Examples  
+### Further Examples  
 * [Ambient Triggers](https://github.com/tessel/ambient-attx4/blob/master/examples/ambient-triggers.js). This example demonstrates the two methods for handling an event when the sound or light gets above a defined threshold. 
 
 ### License
