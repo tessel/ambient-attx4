@@ -1,4 +1,6 @@
 # Ambient
+
+[![Greenkeeper badge](https://badges.greenkeeper.io/tessel/ambient-attx4.svg)](https://greenkeeper.io/)
 [![Code of Conduct](https://img.shields.io/badge/%E2%9D%A4-code%20of%20conduct-blue.svg?style=flat)](https://github.com/tessel/project/blob/master/CONDUCT.md)
 
 Driver for the ambient-attx4 Tessel ambient (light and sound detecting) module. The hardware documentation can be found [here](https://github.com/tessel/hardware/blob/master/modules-overview.md#ambient).
